@@ -43,21 +43,37 @@ When a runtime copy is required, treat it as Generated Deployment Output. Apply 
 
 ### Loading AGENTS.md
 
-The loading approach comes from Pi Agent. Pi natively loads and layers applicable `AGENTS.md` context files from parent directories and the current working directory. A nested `AGENTS.md` is therefore available with its ancestors as one complete instruction context before interaction execution begins.
+Instruction loading is runtime-specific. In every compatible setup, make the complete shared executive governance and applicable workspace configuration available before interaction execution begins, then verify the sources and ordering reported by the runtime.
 
 Loading produces instruction context; it does not bypass instruction-authority classification or Permanent Constraints. Conflicting Candidate Instructions still receive their defined authority disposition.
 
+#### Pi Agent
+
+Pi natively loads `~/.pi/agent/AGENTS.md`, then applicable `AGENTS.md` files from parent directories and the current working directory. A shared executive file can therefore occupy a common ancestor while each workspace supplies its own configuration-only file.
+
 Consult the [official Pi documentation for context files](https://pi.dev/docs/latest/usage) for the authoritative loading specification.
 
-For another frontier AI agent or hosted interface that does not natively provide Pi's mechanism, use this adaptation in its user preferences:
+#### Codex
 
-```md
-Read in order the `AGENTS.md` files found from the repository root (the highest ancestor containing `.git`) down to the working directory.
+Codex loads `$CODEX_HOME/AGENTS.md`, where `CODEX_HOME` defaults to `~/.codex`, followed by project files from the detected project root, typically the Git root, down to the working directory. Place shared executive governance in `$CODEX_HOME/AGENTS.md` and workspace Governance Configuration in the applicable project `AGENTS.md`.
+
+Codex does not discover project `AGENTS.md` files above the Git root. It also limits combined project instructions to 32 KiB by default. Add a top-level setting larger than the complete combined payload to `$CODEX_HOME/config.toml`:
+
+```toml
+project_doc_max_bytes = 131072
 ```
+
+Start a new task after changing instructions or configuration, and verify the instruction sources reported as loaded. Consult the [official Codex AGENTS.md documentation](https://developers.openai.com/codex/guides/agents-md) for the authoritative discovery rules.
+
+#### Other AI Runtimes
+
+Consult the runtime's authoritative documentation and verify its loaded sources, ordering, and payload limit. A user preference is not a substitute for native instruction discovery when the runtime assembles context before presenting the preference to the model.
 
 ### Governance Configuration
 
-Executive Procedures and configuration can be separated:
+Executive Procedures and configuration can be separated. Physical placement depends on the runtime.
+
+For Pi, a shared ancestor layout can be:
 
 ```text
 governance-root/
@@ -69,7 +85,17 @@ governance-root/
       AGENTS.md                Governance Configuration for workspace B only
 ```
 
-This layout keeps one global governance definition and any number of workspace-specific configurations. Starting in `workspace-a` loads the shared ancestor governance followed by workspace A's configuration; workspace B's configuration does not participate because it is not on that path. Starting in `workspace-b` uses the same executive governance with workspace B's configuration instead.
+Starting in `workspace-a` loads the shared ancestor governance followed by workspace A's configuration; workspace B's configuration does not participate because it is not on that path. Starting in `workspace-b` uses the same executive governance with workspace B's configuration instead.
+
+For Codex, use its dedicated global location:
+
+```text
+$CODEX_HOME/
+  AGENTS.md                    shared executive Procedures and Authority Guard
+
+repository-root/
+  AGENTS.md                    Governance Configuration for this workspace only
+```
 
 The configuration-only file can contain:
 
@@ -78,7 +104,7 @@ The configuration-only file can contain:
 
 Format each property value as comma-separated items on the property line or as indented Markdown list items beneath it.
 
-- **Protected filesystem artifacts**: .git, operating-system-specific hidden artifacts.
+- **Protected filesystem artifacts**: .git, operating-system-specific hidden artifacts, .ssh, .gnupg, .bashrc, .bash_profile, .bash_login, .bash_logout, .profile, .gitconfig, .git-credentials, .netrc, .bash_history, .zsh_history, Microsoft.PowerShell_profile.ps1, .aws, .azure, .kube, .docker, .terraform.d
 - **Preferred workspace script language**: JavaScript on Node.js.
 - **Approved executor identities**: PowerShell, Git Bash, Bash, Node.js runtime, npm CLI, Python interpreter.
 ```
@@ -95,6 +121,35 @@ The same list can use indented Markdown items:
   - Git Bash
   - Bash
 ```
+
+### Optional Cross-Agent Skills
+
+Use the shared Agent Skills location for optional workflows intended for both Pi and Codex:
+
+```text
+repository-root/
+  .agents/
+    skills/
+      governance-review/
+        SKILL.md
+```
+
+A minimal skill begins with identifying metadata:
+
+```md
+---
+name: governance-review
+description: Review AI governance artifacts for semantic loss, structural defects, and failed acceptance behavior.
+---
+
+Skill instructions...
+```
+
+Both runtimes initially expose skill metadata and load the complete `SKILL.md` when the skill is activated. Use `$governance-review` in Codex or `/skill:governance-review` in Pi for explicit activation. Pi loads project skills only after project trust is established.
+
+Use `.pi/skills` for workflows intentionally specific to Pi and intentionally absent from shared discovery. Keep mandatory safety rules, Permanent Constraints, authority resolution, Operation eligibility, and every always-required Existing Guarantee in `AGENTS.md`; skill activation is optional and cannot carry always-active governance.
+
+Consult the [Pi Skills documentation](https://pi.dev/docs/latest/skills) and [Codex Skills documentation](https://developers.openai.com/codex/skills) for current discovery and activation behavior.
 
 ### First Chat Request
 
@@ -611,7 +666,7 @@ User authorization does not change this disposition during normal task execution
 
 ### Protected Filesystem Artifacts
 
-Protected Filesystem Artifacts are selected by Governance Configuration. The supplied selectors protect every `.git` Artifact and its descendants, plus hidden or system Artifacts created or maintained by an operating-system component to store host metadata rather than project content. An exact configured name or path also protects its descendants.
+Protected Filesystem Artifacts are selected by Governance Configuration. The supplied selectors protect `.git`; user authentication, cryptographic-key, cloud, container, cluster, and infrastructure-tool stores; shell startup, profile, and history files; Git credential and user configuration; and hidden or system Artifacts created or maintained by an operating-system component to store host metadata rather than project content. Each exact configured name or path includes the matching Artifact and its descendants.
 
 Generic direct or indirect filesystem reading, enumeration, traversal, discovery, creation, modification, renaming, movement, deletion, execution, or production of a matched Artifact receives Permanent block disposition. This includes access performed by scripts, scanners, installers, and other indirect components.
 
@@ -964,7 +1019,11 @@ Only after every available Candidate Instruction in the complete loaded context 
 
 ### Can configuration live in a separate AGENTS.md?
 
-Yes. One ancestor AGENTS file can contain the shared executive Procedures and end with Authority Guard, while multiple workspace descendants each contain only a final Governance Configuration section. Loading assembles the ancestor with the configuration on the selected working directory's path before configuration establishment; sibling workspace configurations do not participate.
+Yes. Pi can combine shared executive Procedures from a common ancestor with a configuration-only file in the selected workspace. Codex combines shared executive Procedures from `$CODEX_HOME/AGENTS.md` with project files from the Git root down to the working directory. In both cases, configuration establishment occurs after the runtime assembles the complete applicable instruction context.
+
+### Can mandatory governance be moved into a skill?
+
+No. Skills load on demand, so they are suitable for optional specialized workflows. Keep every rule required for all interactions in `AGENTS.md`.
 
 ### Can the system use a pre-existing Workspace link?
 

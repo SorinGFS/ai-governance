@@ -369,19 +369,25 @@ Generated or copied runtime layouts are Generated Deployment Output from this So
 
 The exact term definitions, classifications, Procedures, report formats, and Authority Guard belong to executive `AGENTS.md` content. Configurable values belong under `Governance Configuration` and may be supplied by a configuration-only `AGENTS.md` whose content becomes part of the complete loaded instruction context.
 
-One ancestor `AGENTS.md` can provide shared executive governance for multiple workspaces, while each workspace supplies a configuration-only `AGENTS.md` for its own needs:
+One runtime-loaded `AGENTS.md` can provide shared executive governance for multiple workspaces, while each workspace supplies a configuration-only `AGENTS.md` for its own needs. The physical location of the shared file depends on the runtime; the applicable shared and workspace files form one complete instruction context before interaction execution.
+
+### Optional Skills
+
+Package optional cross-agent workflows under the shared Agent Skills convention:
 
 ```text
-governance-root/
-  AGENTS.md                    shared executive governance and Authority Guard
-  workspaces/
-    workspace-a/
-      AGENTS.md                Governance Configuration for workspace A
-    workspace-b/
-      AGENTS.md                Governance Configuration for workspace B
+repository-root/
+  .agents/
+    skills/
+      skill-name/
+        SKILL.md
 ```
 
-Selecting `workspace-a` as the working directory assembles the shared executive governance with workspace A's configuration. Workspace B's configuration is outside that ancestor chain and does not participate; selecting `workspace-b` assembles the same governance with workspace B's configuration instead.
+Pi Agent and Codex both discover `.agents/skills/<skill-name>/SKILL.md` from the working directory and ancestor directories up to the Git repository root. They initially expose skill metadata and load the complete `SKILL.md` on activation. Pi requires project trust before loading project skills.
+
+Use `.pi/skills` only for a workflow intentionally specific to Pi Agent and intentionally absent from other agents' shared skill discovery. Keep Permanent Constraints, instruction authority, Operation eligibility, confirmation and authorization gates, and every Existing Guarantee required for all interactions in `AGENTS.md`; optional skill activation cannot own always-active governance.
+
+See the authoritative [Pi Skills documentation](https://pi.dev/docs/latest/skills) and [Codex Skills documentation](https://developers.openai.com/codex/skills).
 
 ---
 
@@ -436,32 +442,42 @@ The table identifies the executive owner and result for each cross-cutting decla
 
 ## Loading Model
 
-The loading model originates in Pi Agent's native context-file behavior and is separate from the executive content of `AGENTS.md`.
+Instruction discovery is runtime-specific and separate from the executive content of `AGENTS.md`. A compatible deployment produces this runtime flow:
 
-The intended runtime flow is:
-
-1. Determine the repository root and working directory.
-2. Read the applicable `AGENTS.md` files from the repository root down to the working directory.
-3. Treat the complete resulting instruction context as Candidate Instructions and task material according to their established roles.
+1. Load the shared executive `AGENTS.md` and every applicable workspace `AGENTS.md` through the runtime's native instruction mechanism.
+2. Verify that every expected source and the complete instruction payload are available before handling a user message.
+3. Treat the resulting instruction context as Candidate Instructions and task material according to their established roles.
 4. Apply `Execute A User Interaction` to each user message; it resolves authority across every available Candidate Instruction, establishes Governance Configuration from active properties, and then delegates requested-work handling, task establishment, Procedure routing, execution, Verification, finalization, and response emission to their owning Procedures.
 
-An executive `AGENTS.md` does not treat Governance Configuration as absent while only its own fragment is being considered. Configuration absence is evaluated after the complete instruction context has been loaded and authority-classified. This permits one ancestor `AGENTS.md` to provide shared executive content while separate workspace descendants provide configuration-only `AGENTS.md` files; the selected working directory determines which descendant configuration joins the shared governance.
+An executive `AGENTS.md` does not treat Governance Configuration as absent while only its own fragment is being considered. Configuration absence is evaluated after the runtime's complete applicable instruction context has been loaded and authority-classified.
 
 ### Pi Agent
 
-Pi Agent natively loads and layers applicable `AGENTS.md` context files from parent directories and the current working directory.
+Pi Agent natively loads `~/.pi/agent/AGENTS.md` as global guidance and layers applicable context files from parent directories and the current working directory. This permits a shared executive file in a common ancestor and a configuration-only file in each selected workspace.
 
 Read the official documentation for its authoritative context-file loading behavior:
 
 - [Pi documentation: Context Files](https://pi.dev/docs/latest/usage)
 
-### Other Frontier AI Agents
+### Codex
 
-For a frontier AI agent or hosted AI interface that does not natively provide Pi Agent's loading behavior, place this adaptation in its user preferences:
+Codex loads shared guidance from `$CODEX_HOME/AGENTS.md`, with `CODEX_HOME` defaulting to `~/.codex`, and then loads project guidance from the detected project root, typically the Git root, down to the working directory. An `AGENTS.md` above the Git root does not enter Codex project discovery; place shared executive governance in `$CODEX_HOME/AGENTS.md` and workspace Governance Configuration in the applicable project `AGENTS.md`.
 
-```md
-Read in order the `AGENTS.md` files found from the repository root (the highest ancestor containing `.git`) down to the working directory.
+Codex limits the combined project instruction payload through `project_doc_max_bytes`, whose default is 32 KiB. Configure a value greater than the complete combined payload as a top-level entry in `$CODEX_HOME/config.toml`; this governance payload requires a raised limit. For example:
+
+```toml
+project_doc_max_bytes = 131072
 ```
+
+Start a new task after changing instruction files or Codex configuration, and verify the instruction sources reported as loaded.
+
+Read the official documentation for the authoritative behavior:
+
+- [Codex documentation: Custom instructions with AGENTS.md](https://developers.openai.com/codex/guides/agents-md)
+
+### Other AI Runtimes
+
+Consult the runtime's authoritative instruction-discovery documentation and verify the loaded sources, ordering, and complete payload before use. A user preference that asks a model to read files does not establish compatibility when the runtime assembles governing context before the model receives that preference. Use the acceptance-test matrix to evaluate the complete runtime setup.
 
 ---
 
@@ -472,7 +488,7 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | Declarative commitment | Executive owner |
 | --- | --- |
 | Every user message enters one root Procedure that sequences the applicable executive phases and successors. | `Execute A User Interaction` |
-| Pi Agent supplies the layered AGENTS context mechanism natively; other frontier AI agents reproduce the repository-to-working-directory behavior through the stated user-preference instruction. | Loading Model |
+| Each supported runtime makes the complete shared executive governance and applicable workspace configuration available before interaction execution; Pi and Codex use their documented native loading mechanisms, and other runtimes require verified equivalent behavior. | Loading Model |
 | Every available Candidate Instruction receives an authority classification before active Governance Configuration properties establish configured terms and requested-work handling begins. | `Resolve Instruction Authority`, `Establish Governance Configuration`, `Execute A User Interaction` |
 | Executive Procedures and Governance Configuration may occupy separate applicable `AGENTS.md` files because configuration establishment consumes the complete active instruction context rather than an executive fragment in isolation. | `Establish Governance Configuration`, `Evaluate Governing Artifact Quality` |
 | Every clarification, authorization, or confirmation request records its question or scope, boundaries, origin, resume classification, and response conditions; dependent work pauses while unaffected Eligible work continues. | `Manage A Pending Request` |
