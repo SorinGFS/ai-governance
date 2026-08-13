@@ -56,6 +56,8 @@ The governance source consists of `README.md` and `AGENTS.md`.
 14. **Observable Interaction Completion**: Every handled user message produces one Final Response, Context Response, or Pending Request disposition; closing one execution branch preserves the remaining interaction.
 15. **Bounded Behavioral Evidence**: Evidence for an exact Invocation Context establishes executable behavior at a finite tool boundary while every activated extension remains subject to recursive inspection and executor authorization remains independently classified.
 16. **Composable Governance Configuration**: Configured terms receive their values from active Governance Configuration properties established only after authority classification covers the complete available instruction context.
+17. **Information Currency**: State-dependent information remains usable only while its recorded Validity Condition is current for the intended use; invalidated information receives fresh retrieval or an unresolved disposition.
+18. **Closed-Task Isolation**: Final response handling closes the Action Task, expires Task-scoped state, and retains prior work as historical evidence rather than current state.
 
 ---
 
@@ -72,7 +74,7 @@ They define the problems that the Procedure model responds to.
 - `Hallucinations`: Generates false information that is presented confidently.
 - `Speculation`: Fills gaps by guessing when evidence is missing.
 - `Fabricated_sources`: Invents references, citations, APIs, functions, papers, or people.
-- `Outdated_knowledge`: May rely on obsolete information unless external data is used.
+- `Outdated_knowledge`: May rely on obsolete internal, retrieved, or previously verified information unless its currency is established for the current use.
 - `Cannot_distinguish_unknown`: Often predicts the most likely answer instead of explicitly saying "I don't know."
 
 ### Reasoning
@@ -87,6 +89,7 @@ They define the problems that the Procedure model responds to.
 
 - `Limited_context_window`: Cannot consider information that does not fit in the current context.
 - `Context_loss`: Earlier information may be forgotten or compressed.
+- `Stale_context`: Historical or previously observed state may be reused as though it still describes current conditions.
 - `Incomplete_input`: Missing user information often leads to incorrect conclusions.
 - `Ambiguity_resolution`: Must choose an interpretation when multiple are possible.
 - `Order_sensitivity`: Different prompt ordering can produce different answers.
@@ -158,6 +161,7 @@ They define the problems that the Procedure model responds to.
 - `Goal_drift`: Long-running work can gradually deviate from the original objective.
 - `Accumulated_errors`: Small mistakes compound over multiple iterations.
 - `Inconsistent_state`: Different sessions may not share identical context.
+- `Task_state_leakage`: Assumptions, authorizations, Constraints, or runtime observations from completed work may remain implicitly active during later work.
 - `Specification_erosion`: Requirements can be unintentionally simplified or omitted during revisions.
 
 ---
@@ -227,13 +231,13 @@ The executive implementation is distributed across `Manage A Pending Request`, `
 
 ### Interaction Completion
 
-Each user message reaches exactly one observable Interaction Disposition. `Manage A Pending Request` emits each required clarification, authorization, or confirmation request, retains its originating Procedure state, classifies later responses through instruction authority, and either resumes or closes that origin according to explicit response conditions. `Confirm A Harmful Outcome` supplies the shared confirmation conditions. Completed Action Tasks emit a Final Response after finalization. Context-only interactions emit a Context Response.
+Each user message reaches exactly one observable Interaction Disposition. `Manage A Pending Request` emits each required clarification, authorization, or confirmation request, retains its originating Procedure state, classifies later responses through instruction authority, and either resumes or closes that origin according to explicit response conditions. `Confirm A Harmful Outcome` supplies the shared confirmation conditions. Finalized Action Tasks close before their recorded Final Responses are emitted. Context-only interactions emit a Context Response.
 
 Procedure activation and completion remain separately traceable through one compact Procedure Execution Record for each invocation. A stable Task-scoped identifier, ordered status history, Trigger reference, outcome reference, and evidence references preserve the lifecycle. Detailed task artifacts retain work content, and private reasoning remains outside the lifecycle record.
 
-Active records, terminal records required by finalization, and the outcome and evidence referents required to interpret them survive Pending Requests, continuation messages, and context compression. Every required record reaches `completed` or `limited` before task completion.
+Active records, terminal records required by finalization, and the outcome and evidence referents required to interpret them survive Pending Requests, continuation messages, and context compression. A Procedure reaches `completed` only after its required result and Verification. The lifecycle recorder remains running through Action Task closure and Final Response emission. After emission, the interaction record completes; the recorder verifies every other record is terminal and retained, then appends its own completed transition and finalizes the Historical Task Record.
 
-The executive implementation is `Manage A Pending Request`, `Confirm A Harmful Outcome`, `Complete The Interaction`, and `Track Procedure Execution`, supported by `Close An Invocation Path` and `Finalize Task`.
+The executive implementation is `Manage A Pending Request`, `Confirm A Harmful Outcome`, `Complete The Interaction`, `Close An Action Task`, and `Track Procedure Execution`, supported by `Close An Invocation Path`, `Resolve Information`, and `Finalize Task`.
 
 ### Traceable Coverage
 
@@ -252,7 +256,7 @@ The executive implementation is the Guarantee Record, Change Surface review, qua
 
 ## Interaction At A Glance
 
-Every user message enters one root Procedure. Authority resolution covers every available Candidate Instruction before Governance Configuration establishes configured terms. The message then becomes a context response, continuation of an existing Action Task, or new Action Task. Action work proceeds through information resolution, Procedure activation, Operation eligibility, execution, Verification, finalization, and one observable response.
+Every user message enters one root Procedure. Authority resolution covers every available Candidate Instruction before Governance Configuration establishes configured terms. The message then becomes a context response, continuation of an active Action Task, or new Action Task. Action work proceeds through current-information resolution, Procedure activation, Operation eligibility, execution, Verification, finalization, explicit Task closure, and one observable response.
 
 ```mermaid
 flowchart TD
@@ -267,8 +271,8 @@ flowchart TD
     H --> I["Emit request disposition and preserve resume state"]
 
     C -->|Context only| D["Emit Context Response"]
-    C -->|Continue Action Task| E["Resume retained task state"]
-    C -->|New Action Task| F["Establish requested work"]
+    C -->|Continue active Action Task| E["Resume retained task state"]
+    C -->|New Action Task or closed-task follow-up| F["Establish requested work and resolve imports"]
 
     E --> G["Resolve task state"]
     F --> G
@@ -293,24 +297,29 @@ flowchart TD
     O -->|Alternative or unaffected task work| J
     O -->|Finalization required| P
 
-    M --> J
+    M --> X["Invalidate affected state and resolve it before dependent use"]
+    X --> J
     P --> Q
     Q -->|Correction available| J
     Q -->|Checks resolved| R["Finalize Action Task"]
     R -->|Correction required| J
-    R -->|Complete or limited| S["Emit Final Response"]
+    R -->|Complete or limited| Y["Record Final Response"]
+    Y --> Z["Close Action Task and expire Task-scoped state"]
+    Z --> S["Emit recorded Final Response"]
 
     D --> T["Interaction complete"]
     I --> T
     S --> T
 ```
 
-Four transitions govern exceptional cases:
+Six transitions govern lifecycle and exceptional cases:
 
 1. `Manage A Pending Request` emits the required clarification, authorization, or confirmation request after unaffected Eligible work and preserves the exact state resumed by a later response.
 2. `Confirm A Harmful Outcome` records a matching confirmed scope or closes the unconfirmed path after refusal, zero required effects, or repeated Confirmation required classification.
 3. Closing an Invocation Path ends only the affected branch. Eligible alternatives and unaffected work continue; otherwise the affected requested item becomes a reported limitation.
 4. Each handled user message emits exactly one Final Response, Context Response, or Pending Request disposition.
+5. An executed Operation invalidates each earlier state-dependent observation that its effects could have changed; dependent use resumes only after information resolution supplies current evidence or an unresolved disposition.
+6. A Final Response closes its Action Task before emission. Closure invalidates retained mutable observations for subsequent use, expires ordinary Task-scoped state, verifies closed state, and creates the Historical Task Record. After response emission, the interaction completes; the recorder verifies and retains every terminal record, appends its own completion, and finalizes the Historical Task Record.
 
 Configuration establishment begins only after all available Candidate Instructions have authority classifications. It collects active properties from the complete instruction context, resolves configured terms according to their combination rules, and retains a missing or ambiguous required property as unresolved until dependent work requires its resolution.
 
@@ -330,7 +339,7 @@ The executive model progresses through these layers, which correspond to the gro
 
 1. **Terms** establish primitive, information, task, authority, artifact, and operation concepts.
 2. **Interaction Control** sequences every user interaction; manages Pending Requests and harmful-outcome confirmation; resolves information, Claims, approaches, Invocation Path closure, and instruction authority; establishes Governance Configuration and Requested Work; and completes each interaction.
-3. **Operation Control** establishes the Workspace, classifies Operation eligibility and executable behavior, selects tools, verifies compatibility and work, corrects errors, and selects maintainable Artifacts and repository script languages.
+3. **Operation Control** establishes the Workspace, classifies Operation eligibility and executable behavior, selects tools, verifies compatibility and work, corrects errors, and selects maintainable Artifacts and Workspace script languages.
 4. **Procedure Routing And State** produces the Task Specification, activates required Procedures from one routing owner, and records each Procedure lifecycle.
 5. **Task Procedures** govern reasoning, research, and planning.
 6. **Software And Content Procedures** govern implementation, code review, editing, document creation, and document review.
@@ -401,21 +410,21 @@ The table identifies the executive owner and result for each cross-cutting decla
 | Governance configuration | `Resolve Instruction Authority`, `Establish Governance Configuration` | After every available Candidate Instruction receives an authority classification, active configuration properties establish configured terms before requested-work handling; missing or ambiguous required properties remain unresolved until dependent use. |
 | Pending user input | `Manage A Pending Request` | Clarification, authorization, and confirmation requests share one retained-state lifecycle with explicit success, terminal-response, and unresolved outcomes. |
 | Harmful-outcome confirmation | `Confirm A Harmful Outcome` | A predicted Harmful Outcome receives one scoped confirmation protocol and either a Confirmed Harmful Outcome or Invocation Path closure. |
-| Information integrity | `Resolve Information` | Each Information Item receives an admissible, recoverable, clarification-required, interpretation-set, assumption-eligible, or unresolved disposition before it contributes to the Task Specification. |
+| Information integrity | `Resolve Information` | Each Information Item receives an admissible, recoverable, clarification-required, interpretation-set, assumption-eligible, or unresolved disposition; State-dependent Information also requires current Information Validity for its intended use. |
 | Claim integrity | `Qualify Claims`, `Verify Facts` | Each Claim receives a presentation status connected to evidence and verification. |
 | Deterministic selection | `Select An Approach` | Competing approaches receive an ordered comparison. |
 | Instruction authority | `Resolve Instruction Authority` | Candidate Instructions produce the Active Instruction Set. |
 | Invocation-path continuity | `Close An Invocation Path` | Affected paths receive recorded closure and limitation dispositions while unaffected or eligible alternative work continues. |
-| Requested work and context | `Establish Requested Work`, `Analyze Task` | Requested Scope, Task Specification, and readiness status are established. |
+| Requested work and context | `Establish Requested Work`, `Analyze Task` | Requested Scope, Task Specification, and readiness status are established; a reference to closed work creates a new linked Action Task with selected Historical Imports. |
 | Workspace and execution safety | `Establish The Workspace`, `Evaluate Operation Eligibility`, `Inspect Executable Behavior`, `Verify Work` | Operations receive Permanent block, Indeterminate, Eligible alternative, Authorization required, Confirmation required, or Eligible dispositions. Invocation Context evidence establishes finite tool boundaries, activated Behavior Extensions remain recursively inspected, file-producing Operations receive prospective output-object classification, Workspace Link Introductions receive a Permanent block, and resulting object types receive Verification before dependent use or publication. |
 | Tools and compatibility | `Inspect Executable Behavior`, `Select Tools And Operations`, `Verify Runtime Compatibility` | Sufficient Behavioral Evidence establishes a Behavioral Contract for an Invocation Context; Current Authorization independently determines executor authorization; Tool Results become evidence; and Compatibility Claims receive verified or unverified status. |
 | Verification and correction | `Verify Work`, `Correct Earlier Output`, `Verify Facts` | Detected issues receive correction, repeated verification, or an unresolved classification. |
-| Maintainability | `Select Maintainable Artifacts`, `Select Repository Script Language` | Persistent designs and repository scripts receive deterministic selection outcomes. |
-| Task-specific work | `Analyze Task`, `Route Task Procedures`, `Track Procedure Execution`, and activated task Procedures | Direct Triggers, explicit user requests, routing decisions, and Procedure invocations produce the cumulative Active Procedure Set and compact per-invocation lifecycle records that survive retained and compressed Task state. |
+| Maintainability | `Select Maintainable Artifacts`, `Select Workspace Script Language` | Persistent designs and Workspace scripts receive deterministic selection outcomes. |
+| Task-specific work | `Analyze Task`, `Route Task Procedures`, `Track Procedure Execution`, and activated task Procedures | Direct Triggers, explicit user requests, routing decisions, and Procedure invocations produce the cumulative Active Procedure Set and compact per-invocation lifecycle records that survive retained and compressed active Task state and enter its Historical Task Record at closure. |
 | Meaning integrity | `Edit Content`, `Review Documents`, `Evaluate Governing Artifact Quality` | Meaning and Guarantee Records distinguish required content from authorized modifications. |
 | Governance quality | `Evaluate Governing Artifact Quality`, `Author Rules`, `Optimize Rules`, `Review Rules` | Shared Check Results produce correction-required, verification-required, passed, conforming, accepted, or acceptance-withheld outcomes while preserving Guarantee Record coverage. |
 | Compliance review | `Audit Instructions` | Evidence produces confirmed violations, risks, and unverified items, followed by a violations-found, inconclusive, or pass result. |
-| Completion | `Finalize Task`, `Manage A Pending Request`, `Complete The Interaction` | The Work Product receives a completion disposition and every handled user message emits exactly one observable Interaction Disposition while retained requests preserve their resume state. |
+| Completion | `Finalize Task`, `Manage A Pending Request`, `Complete The Interaction`, `Close An Action Task` | The Work Product receives a completion disposition; Pending Requests retain active Task state; a recorded Final Response closes its Action Task before emission; and lifecycle completion is recorded only after the required result occurs. |
 
 ### Routed Procedures
 
@@ -453,7 +462,7 @@ An executive `AGENTS.md` does not treat Governance Configuration as absent while
 
 ### Pi Agent
 
-Pi Agent natively loads `~/.pi/agent/AGENTS.md` as global guidance and layers applicable context files from parent directories and the current working directory. This permits a shared executive file in a common ancestor and a configuration-only file in each selected workspace.
+Pi Agent loads global guidance from `~/.pi/agent`, using `AGENTS.override.md` when present and otherwise `AGENTS.md`, then layers applicable context files from parent directories and the current working directory. In each of those directories, `AGENTS.override.md` replaces `AGENTS.md` or `CLAUDE.md`. This permits a shared executive file in a common ancestor and a configuration-only file in each selected workspace when no same-directory override replaces it.
 
 Read the official documentation for its authoritative context-file loading behavior:
 
@@ -461,7 +470,7 @@ Read the official documentation for its authoritative context-file loading behav
 
 ### Codex
 
-Codex loads shared guidance from `$CODEX_HOME/AGENTS.md`, with `CODEX_HOME` defaulting to `~/.codex`, and then loads project guidance from the detected project root, typically the Git root, down to the working directory. An `AGENTS.md` above the Git root does not enter Codex project discovery; place shared executive governance in `$CODEX_HOME/AGENTS.md` and workspace Governance Configuration in the applicable project `AGENTS.md`.
+Codex loads shared guidance from `$CODEX_HOME`, with `CODEX_HOME` defaulting to `~/.codex`, using `AGENTS.override.md` when present and otherwise `AGENTS.md`. It then loads project guidance from the detected project root, typically the Git root, down to the working directory; in each directory, `AGENTS.override.md` replaces `AGENTS.md` for that directory. An `AGENTS.md` above the Git root does not enter Codex project discovery; place shared executive governance in `$CODEX_HOME/AGENTS.md` and workspace Governance Configuration in the applicable project `AGENTS.md` when no same-directory override replaces it.
 
 Codex limits the combined project instruction payload through `project_doc_max_bytes`, whose default is 32 KiB. Configure a value greater than the complete combined payload as a top-level entry in `$CODEX_HOME/config.toml`; this governance payload requires a raised limit. For example:
 
@@ -495,6 +504,7 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | Every plausible causal path to an unconfirmed Harmful Outcome uses one confirmation protocol that records matching scope, repeats classification after confirmation, and closes the path after refusal, zero required effects, or repeated Confirmation required status. | `Confirm A Harmful Outcome` |
 | Missing, incomplete, ambiguous, and uncertain information receives an explicit disposition before dependent reasoning. | `Resolve Information` |
 | Information admissibility depends on the Active Instruction Set and Requested Work, so admissible inputs precede construction of the Task Specification. | `Resolve Information`, `Analyze Task` |
+| State-dependent information has a Validity Condition, loses current status after an invalidating event, and receives fresh retrieval or an unresolved disposition before dependent use. | `Resolve Information`, `Evaluate Operation Eligibility`, `Finalize Task` |
 | Facts, Inferences, Assumptions, Opinions, Recommendations, and unverified Claims remain distinguishable. | `Qualify Claims` |
 | Material Claims and factual Claims involving changing information, sources, compatibility, paths, Runtime Environment state, names, identifiers, versions, dates, numbers, units, and references receive authoritative Verification or an explicit unverified disposition. | `Verify Facts`, `Verify Runtime Compatibility` |
 | User-provided paths remain authoritative inputs, and path discovery is an explicit task capability. | `Resolve Information` |
@@ -515,21 +525,24 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | Remote network contact is evaluated through its local Operation Targets and Side Effects. | `Evaluate Operation Eligibility` |
 | Direct or indirect filesystem reading, enumeration, traversal, discovery, creation, modification, renaming, movement, deletion, execution, or production of Protected Filesystem Artifacts receives Permanent block disposition; a Dedicated Manager Operation is classified independently and is exempt only for the managed effect established by its Behavioral Contract. | `Establish Governance Configuration`, `Establish The Workspace`, `Evaluate Operation Eligibility` |
 | Workspace-specific information receives a functional, purpose-bound disclosure decision. | `Establish The Workspace` |
-| A Workspace persists across continuation messages for the same Action Task and carries over from a prior Task only through explicit user instruction. | `Establish Requested Work`, `Establish The Workspace` |
+| A Workspace persists across continuation messages for the same active Action Task and enters a later Task only through explicit continued applicability and current information resolution. | `Establish Requested Work`, `Resolve Information`, `Establish The Workspace` |
 | Requested work and correctness-required information define response content. | `Establish Requested Work`, `Finalize Task` |
 | Procedure descriptions provide deterministic routing and retain decision-critical Trigger scope. | `Route Task Procedures`, `Evaluate Governing Artifact Quality` |
 | Every Procedure activated directly, explicitly requested, selected by routing, or invoked by another active Procedure enters the cumulative Active Procedure Set. | `Terms`, `Route Task Procedures` |
 | Every active Procedure invocation has one compact, stable Task-scoped record containing its ordered active, running, completed, limited, or failed transitions and references to its Trigger, outcome, and supporting evidence. | `Track Procedure Execution` |
 | Active lifecycle records, terminal records required by finalization, and their required outcome and evidence referents persist across Pending Requests, continuation messages, and context compression. | `Track Procedure Execution`, `Finalize Task` |
+| Requested Work Constraints are Task-scoped by default; longer-lived instructions retain only Candidate status after closure and receive fresh authority classification on the next message. | `Establish Requested Work`, `Close An Action Task`, `Resolve Instruction Authority` |
+| A finalized Action Task transitions from active to closed before its recorded Final Response is emitted; ordinary Task-scoped state expires, closure is verified, and terminal interaction records enter the Historical Task Record after emission. | `Complete The Interaction`, `Close An Action Task`, `Track Procedure Execution` |
+| A later request concerning closed work establishes a new linked Action Task and resolves only explicitly referenced or correctness-required Historical Imports. | `Establish Requested Work`, `Resolve Information` |
 | Governing Artifacts include prompts, policies, standards, schemas, specifications, routing rules, examples, checklists, and references. | `Terms`, `Author Rules`, `Optimize Rules`, `Review Rules` |
 | Quality criteria and Acceptance Scenarios share pass, failure-with-exact-mismatch, and unverified-with-missing-evidence Check Results before governing-artifact acceptance. | `Evaluate Governing Artifact Quality`, `Review Rules` |
 | Coding and documentation workflows include dedicated post-work semantic-integrity reviews. | `Implement Code`, `Review Code`, `Create Documents`, `Review Documents` |
 | Grammatical structure keeps relationships among actions, objects, and qualifiers unambiguous. | `Evaluate Governing Artifact Quality` |
-| The Preferred Workspace Script Language established by Governance Configuration is selected when project conventions and stronger constraints establish no other eligible language. | `Establish Governance Configuration`, `Select Repository Script Language` |
+| The Preferred Workspace Script Language established by Governance Configuration is selected when Workspace conventions and stronger constraints establish no other eligible language. | `Establish Governance Configuration`, `Select Workspace Script Language` |
 | Persistent designs use deterministic regeneration, validation, and update processes; copied runtime layouts remain Generated Deployment Output. | `Select Maintainable Artifacts` |
 | Compatible extensions maintain instruction authority; an executive Governing Artifact ends its executive content with the task-independent Authority Guard, while a Governance Configuration section, when present, is the final non-executive section. | `Resolve Instruction Authority`, `Evaluate Governing Artifact Quality` |
 | Completed work remains auditable against its Active Instruction Set, Requested Scope, evidence, and required Procedures. | `Audit Instructions`, `Finalize Task` |
-| Every handled user message emits exactly one Final Response, Context Response, or Pending Request disposition; retained waits name the state resumed by a later response. | `Manage A Pending Request`, `Complete The Interaction` |
+| Every handled user message emits exactly one Final Response, Context Response, or Pending Request disposition; retained waits name the state resumed by a later response, and Final Responses follow successful Task closure. | `Manage A Pending Request`, `Complete The Interaction`, `Close An Action Task` |
 | Audit results are violations found when evidence confirms a violation, inconclusive when material evidence remains unavailable, and pass when remaining uncertainty has an isolated effect on the result. | `Audit Instructions` |
 
 ---
@@ -542,7 +555,7 @@ The canonical failure modes are mitigated compositionally. A direct Procedure su
 | --- | --- | --- |
 | Knowledge and truth | `Resolve Information`, `Qualify Claims`, `Research Sources`, `Verify Facts`, `Finalize Task` | Direct |
 | Reasoning | `Select An Approach`, `Analyze Task`, `Reason From Evidence`, `Verify Facts` | Direct |
-| Context | `Manage A Pending Request`, `Resolve Information`, `Establish Requested Work`, `Analyze Task`, `Complete The Interaction`, `Finalize Task` | Direct |
+| Context | `Manage A Pending Request`, `Resolve Information`, `Establish Requested Work`, `Analyze Task`, `Complete The Interaction`, `Close An Action Task`, `Finalize Task` | Direct |
 | Software and code | `Inspect Executable Behavior`, `Select Tools And Operations`, `Verify Runtime Compatibility`, `Implement Code`, `Review Code`, `Verify Work` | Direct |
 | Documents and data | `Resolve Information`, `Edit Content`, `Create Documents`, `Review Documents`, `Verify Facts` | Direct |
 | Planning | `Analyze Task`, `Plan Work`, `Evaluate Operation Eligibility` | Direct |
@@ -551,8 +564,8 @@ The canonical failure modes are mitigated compositionally. A direct Procedure su
 | Retrieval | `Research Sources`, `Qualify Claims`, `Select Tools And Operations`, `Verify Facts` | Direct |
 | Multimodal | `Resolve Information`, `Qualify Claims`, `Select Tools And Operations`, `Create Documents`, `Verify Facts` | Compositional |
 | Security | `Confirm A Harmful Outcome`, `Resolve Instruction Authority`, `Close An Invocation Path`, `Establish The Workspace`, `Evaluate Operation Eligibility`, `Inspect Executable Behavior`, `Select Tools And Operations` | Compositional |
-| Workflow | `Manage A Pending Request`, `Analyze Task`, `Plan Work`, `Track Procedure Execution`, `Verify Work`, `Finalize Task`, `Complete The Interaction` | Compositional |
-| Long-term projects | `Manage A Pending Request`, `Resolve Information`, `Establish Requested Work`, `Track Procedure Execution`, `Edit Content`, `Review Documents`, `Review Rules`, `Finalize Task`, `Complete The Interaction` | Compositional |
+| Workflow | `Manage A Pending Request`, `Analyze Task`, `Plan Work`, `Track Procedure Execution`, `Verify Work`, `Finalize Task`, `Complete The Interaction`, `Close An Action Task` | Compositional |
+| Long-term projects | `Manage A Pending Request`, `Resolve Information`, `Establish Requested Work`, `Track Procedure Execution`, `Edit Content`, `Review Documents`, `Review Rules`, `Finalize Task`, `Complete The Interaction`, `Close An Action Task` | Compositional |
 | Cross-cutting instruction compliance | `Audit Instructions` | Direct |
 
 The executive requirements remain in `AGENTS.md`.

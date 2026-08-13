@@ -12,6 +12,9 @@ The governance behavior is not one flat state machine. A user interaction carrie
 InteractionState = {
   session,
   message_role,
+  task_lifecycle,
+  closure_state,
+  historical_task_records,
   interaction_disposition,
   pending_requests,
   pending_request_state[pending_request],
@@ -20,6 +23,7 @@ InteractionState = {
   instruction_authority[candidate_instruction],
   governance_configuration,
   information[information_item],
+  information_validity[information_item],
   claim_status[claim],
   requested_work,
   constraint_lifecycle[constraint],
@@ -60,8 +64,9 @@ CALL Procedure              invoke a source Procedure
 ADD Procedure               add it to the Active Procedure Set
 CLOSE path                  apply Close An Invocation Path
 EMIT result                 produce an observable result
-RETAIN state                preserve Task state for a later message or environment event
-REPEAT machine              re-enter classification with updated state
+  RETAIN state                preserve Task state for a later message or environment event
+  INVALIDATE item             remove current validity while retaining historical evidence
+  REPEAT machine              re-enter classification with updated state
 ```
 
 ## Canonical Interaction Transitions
@@ -71,7 +76,7 @@ This table is the canonical control-flow projection. The Mermaid diagram and top
 | From | Guard or event | Required action | To |
 | --- | --- | --- | --- |
 | `Start` | user message received | begin current-message handling | `ReceiveMessage` |
-| `ReceiveMessage` | message collected | collect Candidate Instructions and retained Task state | `ResolveAuthority` |
+| `ReceiveMessage` | message collected | collect Candidate Instructions, retained active Task state, and referenced Historical Task Records | `ResolveAuthority` |
 | `ResolveAuthority` | clarification is required | call `Manage A Pending Request` with the clarification conditions | `ManagePendingRequest` |
 | `ResolveAuthority` | harmful-outcome confirmation is required | call `Confirm A Harmful Outcome` | `ConfirmHarmfulOutcome` |
 | `ResolveAuthority` | a response addresses a Pending Request | return its authority classification to the request owner | `ManagePendingRequest` |
@@ -95,11 +100,13 @@ This table is the canonical control-flow projection. The Mermaid diagram and top
 | `ResumePendingProcedure` | operation authorization was suspended | repeat operation classification | `EvaluateOperation` |
 | `ResumePendingProcedure` | harmful-outcome confirmation was suspended | resume its shared confirmation Procedure | `ConfirmHarmfulOutcome` |
 | `EstablishWork` | context-only interaction | prepare contextual reply | `ContextResponse` |
-| `EstablishWork` | existing Action Task continues | restore saved dependency-ready state | `ResumeTask` |
-| `EstablishWork` | new Action Task | resolve required Information Items | `ResolveInformation` |
+| `EstablishWork` | an active Action Task continues | restore saved dependency-ready state | `ResumeTask` |
+| `EstablishWork` | new Action Task, including a request concerning closed work | assign active state, link any referenced Historical Task Record, select Historical Imports, and resolve required Information Items | `ResolveInformation` |
 | `ResumeTask` | saved state restored | continue the saved Procedure and its successors | `TaskWork` |
+| `ResolveInformation` | an invalidated State-dependent Information Item has an authorized current source | retrieve current evidence and repeat classification | `ResolveInformation` |
 | `ResolveInformation` | user input is required | call `Manage A Pending Request` and retain dependency state | `ManagePendingRequest` |
-| `ResolveInformation` | every required item has an executable disposition | build and classify Task Specification | `AnalyzeTask` |
+| `ResolveInformation` | every initial required item has an executable disposition | build and classify Task Specification | `AnalyzeTask` |
+| `ResolveInformation` | an active Procedure's dependent item has an executable disposition | resume dependency-ready Task work | `TaskWork` |
 | `AnalyzeTask` | clarification or authorization is required | call `Manage A Pending Request` and retain readiness state | `ManagePendingRequest` |
 | `AnalyzeTask` | blocked | allocate affected items to reported limitations | `CloseTaskPath` |
 | `AnalyzeTask` | ready | activate and execute dependency-ready Procedures | `TaskWork` |
@@ -111,7 +118,7 @@ This table is the canonical control-flow projection. The Mermaid diagram and top
 | `EvaluateOperation` | harmful-outcome confirmation is required | call `Confirm A Harmful Outcome` | `ConfirmHarmfulOutcome` |
 | `EvaluateOperation` | Permanent block, exhausted Indeterminate, or denied request | apply `Close An Invocation Path` | `CloseOperationPath` |
 | `EvaluateOperation` | Eligible alternative | classify the alternative | `EvaluateOperation` |
-| `EvaluateOperation` | Eligible | execute and record result | `TaskWork` |
+| `EvaluateOperation` | Eligible | execute, record the result, and invalidate every State-dependent Information Item its effects could have changed | `TaskWork` |
 | `CloseInstructionPath` | Candidate Instructions remain | classify the next candidate | `ResolveAuthority` |
 | `CloseInstructionPath` | classification is complete and message material remains | establish Governance Configuration | `EstablishConfiguration` |
 | `CloseInstructionPath` | unaffected Action Task work remains | continue dependency-ready Procedures | `TaskWork` |
@@ -123,6 +130,7 @@ This table is the canonical control-flow projection. The Mermaid diagram and top
 | `TaskWork` | an Operation requires classification | establish its footprint and eligibility | `EvaluateOperation` |
 | `TaskWork` | Procedure fails and eligible recovery remains | record failure and run recovery | `TaskWork` |
 | `TaskWork` | Procedure recovery is exhausted | assign limited status and continue unaffected work | `TaskWork` |
+| `TaskWork` | dependent use reaches an invalidated Information Item | apply `Resolve Information` before use | `ResolveInformation` |
 | `TaskWork` | executable paths remain | execute next dependency-ready Procedure | `TaskWork` |
 | `TaskWork` | Pending Requests remain and unaffected executable work is exhausted | apply `Complete The Interaction` | `CompleteInteraction` |
 | `TaskWork` | every executable path is completed or limited | verify dependency Procedure records and verify work | `VerifyWork` |
@@ -131,10 +139,11 @@ This table is the canonical control-flow projection. The Mermaid diagram and top
 | `FinalizeTask` | correction can change a failed completion check | correct and repeat affected checks | `TaskWork` |
 | `FinalizeTask` | result is complete or complete with limitation | return result to `Complete The Interaction` | `CompleteInteraction` |
 | `CompleteInteraction` | Pending Requests remain | emit one request disposition and retain resume state | `PendingResponse` |
-| `CompleteInteraction` | finalization result is available | emit one Final Response | `FinalResponse` |
+| `CompleteInteraction` | finalization result is available | compose and record one Final Response, then apply `Close An Action Task` | `CloseActionTask` |
 | `CompleteInteraction` | context-only interaction | emit one Context Response | `ContextResponse` |
 | `PendingResponse` | request disposition emitted | retain Task and Pending Requests | `InteractionComplete` |
-| `FinalResponse` | final disposition emitted | record disposition | `InteractionComplete` |
+| `CloseActionTask` | closure conditions pass | preserve completed statuses, invalidate retained State-dependent Information, retain Closure State, expire ordinary Task-scoped state, assign closed, clear the active-Task reference, verify closure effects, and create the Historical Task Record with current Procedure records | `FinalResponse` |
+| `FinalResponse` | verified closed Task and recorded final disposition are ready | record the closure Procedure completed, emit the Final Response, record and verify the disposition, complete and retain `Complete The Interaction`, verify every record except the recorder is terminal and retained, complete and append the recorder, finalize the Historical Task Record, and expire Closure State | `InteractionComplete` |
 | `ContextResponse` | contextual disposition emitted | record disposition | `InteractionComplete` |
 | `InteractionComplete` | current user-message handling completed | wait for another message | `End` |
 
@@ -170,18 +179,21 @@ stateDiagram-v2
     ResumePendingProcedure --> ConfirmHarmfulOutcome: harmful-outcome confirmation
 
     EstablishWork --> ContextResponse: context only
-    EstablishWork --> ResumeTask: Action Task continuation
-    EstablishWork --> ResolveInformation: new Action Task
+    EstablishWork --> ResumeTask: active Action Task continuation
+    EstablishWork --> ResolveInformation: new Action Task or closed-task follow-up
     ResumeTask --> TaskWork: saved dependency-ready state
 
     ResolveInformation --> ManagePendingRequest: clarification required
+    ResolveInformation --> ResolveInformation: retrieve current evidence
     ResolveInformation --> AnalyzeTask: executable dispositions
+    ResolveInformation --> TaskWork: active dependency resolved
     AnalyzeTask --> ManagePendingRequest: clarification or authorization required
     AnalyzeTask --> CloseTaskPath: blocked
     AnalyzeTask --> TaskWork: ready
 
     TaskWork --> EstablishWorkspace: workspace-dependent Operation proposed
     TaskWork --> EvaluateOperation: Operation proposed with Workspace ready
+    TaskWork --> ResolveInformation: invalidated dependency required
     TaskWork --> TaskWork: procedure, recovery, or unaffected work remains
     TaskWork --> CompleteInteraction: Pending Requests remain after unaffected work
     TaskWork --> VerifyWork: all executable paths disposed
@@ -211,10 +223,11 @@ stateDiagram-v2
     FinalizeTask --> CompleteInteraction: complete or complete with limitation
 
     CompleteInteraction --> PendingResponse: Pending Requests remain
-    CompleteInteraction --> FinalResponse: finalization result available
+    CompleteInteraction --> CloseActionTask: Final Response recorded
     CompleteInteraction --> ContextResponse: context only
     PendingResponse --> InteractionComplete: request disposition emitted
-    FinalResponse --> InteractionComplete: final disposition emitted
+    CloseActionTask --> FinalResponse: Task closed
+    FinalResponse --> InteractionComplete: recorded Final Response emitted
     ContextResponse --> InteractionComplete: context disposition emitted
     InteractionComplete --> [*]
 ```
@@ -241,6 +254,9 @@ MACHINE USER_AGENT_INTERACTION
       CALL COMPLETE_INTERACTION(context)
     IF work_state == Task continuation:
       restore and continue the saved dependency-ready Task state
+    IF message concerns a closed Action Task:
+      establish a new linked Action Task
+      select explicitly referenced or correctness-required Historical Imports
 
     information_state = RESOLVE_REQUIRED_INFORMATION()
 
@@ -255,6 +271,9 @@ MACHINE USER_AGENT_INTERACTION
     WHILE executable Invocation Paths remain:
       execute next dependency-ready Procedure
       classify each Operation through EVALUATE_OPERATION
+      after execution, INVALIDATE each State-dependent Information Item
+        whose Validity Condition its effects could have changed
+      resolve each invalidated item before dependent use
       CLOSE blocked, exhausted, or denied Operation paths
       recover failed Procedure invocations when an Eligible recovery exists
       record Claims, Tool Results, Verification, limitations, and Work Product changes
@@ -276,15 +295,52 @@ END MACHINE
 MACHINE COMPLETE_INTERACTION(input)
   IF Pending Requests remain:
     EMIT exactly one request disposition
+    record the disposition
+    record this Procedure invocation as completed when applicable
     RETAIN Task, requests, and originating Procedure states
   ELSE IF input == complete OR input == complete with limitation:
-    EMIT exactly one Final Response
+    record exactly one Final Response
+    closure_result = CLOSE_ACTION_TASK(recorded Final Response)
+    IF closure_result.state == closed:
+      record Close An Action Task as completed in the Historical Task Record
+      EMIT recorded Final Response
+      record and verify the emitted disposition
+      record this Procedure invocation as completed in the Historical Task Record
+      verify every Procedure record except the tracker is terminal and retained
+      STATE tracker completed and append that terminal transition
+      finalize Historical Task Record
+      expire Closure State
   ELSE:
     EMIT exactly one Context Response
+    record the disposition
+    record this Procedure invocation as completed when applicable
   STATE InteractionComplete
-  record the disposition
-  record this Procedure invocation as completed when an Action Task exists
-  complete Task-scoped lifecycle recorder after a Final Response
+END MACHINE
+
+MACHINE CLOSE_ACTION_TASK(recorded_final_response)
+  REQUIRE an active Action Task with complete or complete-with-limitation result
+  REQUIRE Complete The Interaction waiting-for-user-response condition is false
+
+  verify no Pending Request remains unresolved
+  verify every requested item has a completed or reported-limitation disposition
+  verify every other required Procedure Execution Record is completed or limited
+  preserve completed-Task Claim and Information Validity statuses as historical results
+  INVALIDATE every retained State-dependent Information Item for subsequent use
+  RETAIN Closure State containing the recorded Final Response,
+    final interaction Procedure invocations and records, and historical-record data
+  expire Assumptions, Scoped User Authorizations, Confirmed Harmful Outcomes,
+    Workspace, Current Authorization, Pending Requests, unrelated Active Procedure Set entries,
+    and task-scoped instructions and Constraints while retaining explicitly post-Task
+    instructions as Candidate Instructions
+  STATE CLOSED_ACTION_TASK
+  clear active-Task reference
+  verify every retained State-dependent Information Item is invalidated for subsequent use
+  verify ordinary Task-scoped state expired
+  verify retained Candidate Instructions match their established post-Task applicability
+  verify Action Task state is closed and no active-Task reference remains
+  create Historical Task Record with specification, evidence and validity history,
+    Work Product, decisions, limitations, current Procedure records, and Final Response
+  RETURN state=closed, Historical Task Record reference, and recorded Final Response
 END MACHINE
 ```
 
@@ -493,12 +549,40 @@ END MACHINE
 
 ```text
 MACHINE RESOLVE_INFORMATION(item)
+  IF item accuracy can change with mutable runtime, filesystem, process,
+     tool, network, external-source, or user-controlled state:
+       classify item as State-dependent Information
+       record Validity Condition containing observed subject and state,
+         observation context, required recency, source-defined expiration,
+         and invalidating events
+
+       IF originating Action Task closed
+          OR executed Operation, Tool Result, user statement, source update,
+             or observed state could have changed the subject
+          OR source-defined expiration occurred
+          OR required recency is no longer satisfied
+          OR item is a Historical Import without current Verification:
+            STATE INFORMATION_INVALIDATED
+            remove item from current factual premises
+            repeat Claim Qualification for active dependent Claims
+
+            IF authorized current source is accessible:
+              STATE Recoverable
+              retrieve current evidence
+              REPEAT machine
+            ELSE:
+              STATE Unresolved
+              record missing current evidence and affected dependency
+              RETURN state
+
   IF Evidence Item supports content
      AND required fields are complete
      AND interpretation fits Active Instruction Set and Requested Work
-     AND required Verification passed:
-       STATE Admissible
-       add item to task context
+     AND required Verification passed
+     AND (item is not State-dependent Information
+          OR Information Validity is current):
+        STATE Admissible
+        add item to task context
 
   ELSE IF authorized original or Authoritative Source is accessible:
        STATE Recoverable
@@ -541,6 +625,8 @@ MACHINE RESOLVE_INFORMATION(item)
   RETURN state
 END MACHINE
 ```
+
+Historical Task Records preserve the validity and Claim statuses used by the completed Task. Historical Import creates a new Information Item; this machine determines its current status without rewriting the historical result.
 
 Special path transition:
 
@@ -640,12 +726,18 @@ END MACHINE
 MACHINE ESTABLISH_REQUESTED_WORK(message)
   IF message requests an action or defined result:
        STATE ACTION_TASK
+       assign Action Task state active
        extract Deliverables, actions, Constraints, boundaries,
        exclusions, and accepted clarifications
        include correctness-required work in Requested Scope
        exclude adjacent or merely anticipated work from Requested Scope
 
-  ELSE IF an Action Task remains active:
+       IF message refers to a closed Action Task:
+         link the new Action Task to its Historical Task Record
+         select only explicitly referenced or correctness-required items
+         classify each selection as Historical Import through RESOLVE_INFORMATION
+
+  ELSE IF an Action Task has active state:
        STATE TASK_CONTINUATION
        retain same-Task Workspace, Constraints, objectives, and terminology
 
@@ -660,8 +752,13 @@ MACHINE ESTABLISH_REQUESTED_WORK(message)
           OR ALLOCATED_TO_CLARIFICATION
           OR ALLOCATED_TO_REPORTED_LIMITATION
 
-  retain established Constraints until an explicit user instruction
-  replaces or removes them
+  retain each Constraint for its established applicability
+  scope a Requested Work Constraint to the Action Task unless an explicit
+    user instruction establishes longer applicability
+  apply a Governing Instruction Constraint while authority and applicability
+    remain Active
+  import a closed-Task value only after explicit continued applicability
+    and current information resolution
 
   RETURN Requested Work classification and allocations
 END MACHINE
@@ -810,13 +907,22 @@ MACHINE TRACK_PROCEDURE_EXECUTION(invocation, event)
 
   ON transition to Finalize Task:
     IF every other required record is completed or limited:
-      retain tracker running through finalization and response emission
+      retain tracker running through finalization, Action Task closure,
+        and Final Response emission
     ELSE:
       route remaining record to correction, recovery,
       or Complete The Interaction
 
-  ON Final Response recorded and Complete The Interaction completed:
-    STATE tracker completed
+  ON Close An Action Task returns closed:
+    record that Procedure invocation completed in the Historical Task Record
+
+  ON Final Response emitted:
+    record and verify the emitted disposition
+    record Complete The Interaction completed in the Historical Task Record
+    verify every Procedure record except the tracker is terminal and retained
+    STATE tracker completed and append that terminal transition
+    finalize the Historical Task Record
+    expire Closure State
 END MACHINE
 ```
 
@@ -1198,7 +1304,7 @@ evidence remains unavailable -> Unverified claim -> Finalize Task limitation
 
 ## Maintainability Machine
 
-These machines model `Select Maintainable Artifacts` and `Select Repository Script Language`.
+These machines model `Select Maintainable Artifacts` and `Select Workspace Script Language`.
 
 ```text
 MACHINE SELECT_MAINTAINABLE_ARTIFACT(candidate)
@@ -1217,11 +1323,11 @@ MACHINE SELECT_MAINTAINABLE_ARTIFACT(candidate)
        regeneration updates copy
 END MACHINE
 
-MACHINE SELECT_REPOSITORY_SCRIPT_LANGUAGE(candidates)
-  IF project convention, available toolchain, runtime, library requirements,
+MACHINE SELECT_WORKSPACE_SCRIPT_LANGUAGE(candidates)
+  IF Workspace convention, available toolchain, runtime, library requirements,
      material safety, Verification simplicity, or explicit user instruction
-     establishes an existing project language:
-       STATE PROJECT_LANGUAGE_SELECTED
+     establishes an existing Workspace language:
+       STATE WORKSPACE_LANGUAGE_SELECTED
        RETURN that language
 
   ELSE IF Preferred Workspace Script Language established by
@@ -1363,6 +1469,12 @@ MACHINE AUDIT_INSTRUCTIONS(audited_work)
 
   include Risks and Unverified Items under every Overall result
   add correction options only after explicit correction request
+  FOR each Confirmed Violation with multiple correction options:
+    order options from most plausible to least plausible by evidence that each
+    can fully correct the violation while satisfying the Active Instruction Set,
+    Requested Scope, Current Authorization, and Existing Guarantees
+    repeatedly apply SELECT_APPROACH to the remaining equally plausible options
+    label the resulting sequence a., b., c., and so on
 END MACHINE
 ```
 
@@ -1404,19 +1516,23 @@ END MACHINE
 
 | State dimension | Source-defined or derived states |
 | --- | --- |
-| Current-message control | Start, ReceiveMessage, ResolveAuthority, ManagePendingRequest, ConfirmHarmfulOutcome, ResumePendingProcedure, EstablishConfiguration, EstablishWork, ResumeTask, ResolveInformation, AnalyzeTask, TaskWork, EstablishWorkspace, EvaluateOperation, CloseInstructionPath, CloseTaskPath, CloseOperationPath, VerifyWork, FinalizeTask, CompleteInteraction, PendingResponse, FinalResponse, ContextResponse, InteractionComplete, End |
+| Current-message control | Start, ReceiveMessage, ResolveAuthority, ManagePendingRequest, ConfirmHarmfulOutcome, ResumePendingProcedure, EstablishConfiguration, EstablishWork, ResumeTask, ResolveInformation, AnalyzeTask, TaskWork, EstablishWorkspace, EvaluateOperation, CloseInstructionPath, CloseTaskPath, CloseOperationPath, VerifyWork, FinalizeTask, CompleteInteraction, CloseActionTask, PendingResponse, FinalResponse, ContextResponse, InteractionComplete, End |
 | Interaction disposition | clarification request, authorization request, confirmation request, completed result, reported limitation, contextual response |
 | Interaction completion | waiting for user response, final response, action continuation, context response |
 | Pending request | created or retained, success condition satisfied, terminal-response condition satisfied, unresolved, originating classification resumed |
 | Message role | Action Task, Task continuation, Context-only interaction |
+| Action Task lifecycle | active, closed |
+| Historical reuse | Historical Task Record created, finalized after response emission, retained, Historical Import selected, new linked Action Task |
+| Closure lifecycle | Closure State retained, closed state verified, closure record completed, Final Response emitted, terminal records finalized, Closure State expired |
 | Invocation path | active, PATH_CLOSING, PATH_CLOSED_INTERACTION_CONTINUES, PATH_CLOSED_FINALIZATION_REQUIRED, PATH_CLOSED_CONTEXT_RESPONSE_REQUIRED |
 | Requested-item allocation | ALLOCATED_TO_DELIVERABLE, ALLOCATED_TO_ACTION, ALLOCATED_TO_CLARIFICATION, ALLOCATED_TO_REPORTED_LIMITATION |
-| Constraint lifecycle | active, replaced, removed |
+| Constraint lifecycle | active, expired at Task closure, replaced, removed, explicit post-Task applicability retained as Candidate Instruction |
 | Instruction authority | Data, Inactive, Clarification required, Authority conflict, Confirmation required, Active, Inapplicable |
 | Governance configuration | CONFIGURATION_COLLECTING, CONFIGURED_VALUE_ESTABLISHED, CONFIGURATION_VALUE_UNRESOLVED, CONFIGURATION_ESTABLISHED |
 | Configuration combination | list-valued union, final active scalar value |
 | Information origin | Internal Knowledge, Retrieved Information, Tool Result, user-provided information |
 | Information | Admissible, Recoverable, Clarification required, Interpretation set, Assumption eligible, Unresolved |
+| Information validity | current, INFORMATION_INVALIDATED |
 | Required-input acquisition | provided, logically derived |
 | Claim | Verified fact, Fact, Inference, Assumption, Opinion, Recommendation, Unverified claim, Unknown |
 | Approach selection | APPROACH_SELECTED, no selection |
@@ -1434,11 +1550,11 @@ END MACHINE
 | Compatibility | verified compatibility, unverified compatibility |
 | Verification | VERIFICATION_REQUIRED, VERIFIED, CORRECTION_REQUIRED, UNRESOLVED_VERIFICATION, UNEXPECTED_WORKSPACE_LINK_INTRODUCTION |
 | Maintainability | maintainable, Maintenance Commodity, ineligible, Generated Deployment Output |
-| Script language | PROJECT_LANGUAGE_SELECTED, PREFERRED_LANGUAGE_SELECTED, SCRIPT_LANGUAGE_LIMITED |
+| Script language | WORKSPACE_LANGUAGE_SELECTED, PREFERRED_LANGUAGE_SELECTED, SCRIPT_LANGUAGE_LIMITED |
 | Task Specification | ready, clarification required, authorization required, blocked |
 | Procedure execution | active, running, completed, limited, failed |
 | Task-scoped lifecycle recorder | tracker running, tracker completed |
-| Procedure record retention | active record retained, finalization-dependency record retained, internal Task state, included in Interaction Disposition |
+| Procedure record retention | active record retained, finalization-dependency record retained, internal active-Task state, Historical Task Record, included in Interaction Disposition |
 | Quality input | quality criterion, Acceptance Scenario |
 | Check result | pass, failure with exact mismatch, unverified with missing evidence |
 | Quality resolution | correction required, verification required, passed, conforming |
@@ -1459,7 +1575,7 @@ These static traversals compare representative starting conditions with the cano
 | --- | --- | --- |
 | Context-only message without active Action Task | `Start -> ReceiveMessage -> ResolveAuthority -> EstablishConfiguration -> EstablishWork -> ContextResponse -> InteractionComplete -> End` | pass |
 | Excluded contextual candidate | `ResolveAuthority -> CloseInstructionPath -> EstablishConfiguration -> EstablishWork -> ContextResponse -> InteractionComplete` | pass |
-| Excluded action request | `ResolveAuthority -> CloseInstructionPath -> VerifyWork -> FinalizeTask -> CompleteInteraction -> FinalResponse -> InteractionComplete` | pass |
+| Excluded action request | `ResolveAuthority -> CloseInstructionPath -> VerifyWork -> FinalizeTask -> CompleteInteraction -> CloseActionTask -> FinalResponse -> InteractionComplete` | pass |
 | Executive-only ancestor fragment plus configuration-only later fragment | load complete context, then `ResolveAuthority -> EstablishConfiguration -> EstablishWork`; configured terms use active properties from the later fragment | pass |
 | Required property absent after complete authority classification | `ResolveAuthority -> EstablishConfiguration -> CONFIGURATION_VALUE_UNRESOLVED`; before dependent work, enter `ResolveInformation` | pass |
 | Repeated active list-valued properties | `EstablishConfiguration -> CONFIGURED_VALUE_ESTABLISHED` using the union of every active value | pass |
@@ -1467,6 +1583,8 @@ These static traversals compare representative starting conditions with the cano
 | User-resolvable equal-authority conflict | `ResolveAuthority -> ManagePendingRequest -> CompleteInteraction -> PendingResponse -> InteractionComplete`; a successful later response follows `ResolveAuthority -> ManagePendingRequest -> ResumePendingProcedure -> ResolveAuthority` | pass |
 | User-inaccessible Governing Instruction conflict | `ResolveAuthority -> CloseInstructionPath`, followed by remaining work or limitation finalization | pass |
 | Information clarification | `ResolveInformation -> ManagePendingRequest -> CompleteInteraction -> PendingResponse -> InteractionComplete`; a successful later response restores `ResolveInformation` through `ResumePendingProcedure` | pass |
+| Executed Operation invalidates a dependent observation | `EvaluateOperation -> TaskWork -> ResolveInformation`; current evidence returns to `TaskWork`, while unavailable current evidence produces Unresolved handling | pass |
+| Closed-task mutable Historical Import | `EstablishWork -> ResolveInformation -> INFORMATION_INVALIDATED -> Recoverable -> ResolveInformation` or `Unresolved` | pass |
 | Authorization withheld | `EvaluateOperation -> ManagePendingRequest -> ResumePendingProcedure -> EvaluateOperation -> CloseOperationPath`, followed by `TaskWork` or `VerifyWork` | pass |
 | Harmful-outcome confirmation withheld | `EvaluateOperation -> ConfirmHarmfulOutcome -> ManagePendingRequest -> ResumePendingProcedure -> ConfirmHarmfulOutcome -> CloseOperationPath`, followed by `TaskWork` or `VerifyWork` | pass |
 | Pending response remains unresolved | `ResolveAuthority -> ManagePendingRequest -> CompleteInteraction -> PendingResponse -> InteractionComplete` with the same request and origin retained | pass |
@@ -1484,7 +1602,7 @@ These static traversals compare representative starting conditions with the cano
 | Temporary link would enter Workspace | reclassify as Workspace Link Introduction, then `EvaluateOperation -> CloseOperationPath` | pass |
 | Eligible Operation unexpectedly introduces a Workspace link | isolate output, apply eligible correction, repeat Verification, and report the violation | pass |
 | Invocation Context has a runtime schema or authoritative exact-version contract covering all material behavior | `BEHAVIOR_UNKNOWN -> SUFFICIENT_BEHAVIORAL_EVIDENCE -> ESTABLISHED_TOOL_BOUNDARY`, then Operation classification | pass |
-| Established tool activates a project script, hook, plugin, or configuration extension through its Invocation Context | close implementation-recursion at the tool boundary and recursively inspect every activated Behavior Extension | pass |
+| Established tool activates a Workspace script, hook, plugin, or configuration extension through its Invocation Context | close implementation-recursion at the tool boundary and recursively inspect every activated Behavior Extension | pass |
 | Additional identified behavioral evidence is obtainable through an Eligible Operation | `BEHAVIOR_UNKNOWN -> BEHAVIOR_EVIDENCE_RECOVERABLE -> BEHAVIOR_UNKNOWN` after retrieval | pass |
 | Activated Behavior Extension remains unknown at the inspection limit | `BEHAVIOR_UNKNOWN -> INDETERMINATE_OPERATION`, then close only the affected Operation path | pass |
 | Sufficient Behavioral Evidence exists for an executor lacking allowlist membership and Scoped User Authorization | establish the Behavioral Contract, then `Evaluate Operation Eligibility -> Authorization required` | pass |
@@ -1495,12 +1613,14 @@ These static traversals compare representative starting conditions with the cano
 | Quality criterion differs from its stated condition | `ASSIGN_CHECK_RESULT -> failure -> PRODUCE_QUALITY_RESULT -> correction required` with the exact mismatch and owner recorded | pass |
 | Acceptance Scenario evidence remains unavailable | `ASSIGN_CHECK_RESULT -> unverified -> PRODUCE_QUALITY_RESULT -> verification required`; Unresolved evidence produces reported limitations and acceptance withheld | pass |
 | Complete quality-criterion set passes | `ASSIGN_CHECK_RESULT -> pass -> PRODUCE_QUALITY_RESULT -> passed -> conforming` | pass |
-| Successful Action Task | `TaskWork -> VerifyWork -> FinalizeTask -> CompleteInteraction -> FinalResponse -> InteractionComplete -> End` | pass |
-| Action Task completed with limitation | `CloseTaskPath` or `CloseOperationPath -> VerifyWork -> FinalizeTask -> CompleteInteraction -> FinalResponse -> InteractionComplete` | pass |
+| Successful Action Task | `TaskWork -> VerifyWork -> FinalizeTask -> CompleteInteraction -> CloseActionTask -> FinalResponse -> InteractionComplete -> End` | pass |
+| Action Task completed with limitation | `CloseTaskPath` or `CloseOperationPath -> VerifyWork -> FinalizeTask -> CompleteInteraction -> CloseActionTask -> FinalResponse -> InteractionComplete` | pass |
+| Pending Request retains active Task | `CompleteInteraction -> PendingResponse -> InteractionComplete`; no `CloseActionTask` transition occurs | pass |
+| Later action references closed work | `Start -> ReceiveMessage -> ResolveAuthority -> EstablishConfiguration -> EstablishWork -> ResolveInformation`; a new active Task links the Historical Task Record and the closed Task remains closed | pass |
 
 ## Completion And Waiting Semantics
 
-`InteractionComplete` is the only terminal state for current-message handling. It is reachable only after one observable Interaction Disposition is emitted. `End` represents the diagram boundary after that state, rather than an executive state.
+`InteractionComplete` is the only terminal state for current-message handling. It is reachable only after one observable Interaction Disposition is emitted. A Final Response reaches it only after `CloseActionTask` assigns and verifies closed Task state, the response is emitted, and the terminal interaction and recorder records finalize the Historical Task Record. A Pending Response preserves active Task state. `End` represents the diagram boundary after that state, rather than an executive state.
 
 `ManagePendingRequest` suspends dependent work while preserving an explicit successor. It admits these three request kinds:
 
@@ -1522,7 +1642,7 @@ The following states close only an Invocation Path and therefore retain control-
 | Authorization or confirmation withheld | Eligible alternative, unaffected Task work, or verification and finalization |
 | Blocked Task Specification | unaffected Task work or verification and finalization |
 
-`COMPLETE_WITH_LIMITATION` and `COMPLETE` are finalization results rather than message terminals. Both return to `Complete The Interaction`, which emits the Final Response.
+`COMPLETE_WITH_LIMITATION` and `COMPLETE` are finalization results rather than message terminals. Both return to `Complete The Interaction`, which records the Final Response, closes and verifies the Action Task, records closure completion, emits the response, and only then completes the interaction and recorder while finalizing the Historical Task Record.
 
 ## Dead And Unreliable Branch Report
 
@@ -1545,7 +1665,9 @@ The canonical interaction table has these required graph properties:
 4. every complete authority-classification path reaches `EstablishConfiguration` before `EstablishWork`;
 5. every path-closing state transitions to remaining classification, configuration establishment, context response, Task work, or verification and finalization;
 6. every retained wait passes through `ManagePendingRequest` and `CompleteInteraction`, emits `PendingResponse` for the current message, and records a resume target for a later response;
-7. `FinalResponse`, `ContextResponse`, and `PendingResponse` are the only predecessors of `InteractionComplete`.
+7. `FinalResponse`, `ContextResponse`, and `PendingResponse` are the only predecessors of `InteractionComplete`;
+8. `CloseActionTask` is the only predecessor of `FinalResponse`;
+9. `CloseActionTask` has one successor, `FinalResponse`, with closed Task state.
 
 The mechanical graph audit reports zero `UNREACHABLE` states and zero `UNTERMINATED` states in the canonical table. The Mermaid projection preserves the same state successors after treating `[*]` as `Start` or `End`.
 
@@ -1555,14 +1677,16 @@ The mechanical graph audit reports zero `UNREACHABLE` states and zero `UNTERMINA
 | --- | --- |
 | Context-only message without active Task | `Context-only interaction` -> `Context Response` -> `InteractionComplete` |
 | Equal-authority conflicting instructions | user-resolvable conflict -> Clarification required; otherwise -> Authority conflict -> path closure |
-| Procedure completion accounting | per-invocation lifecycle record with active, running, completed, limited, and failed states |
-| Repository script language without eligible candidate | `Resolve Information`, then retry or reported limitation |
+| Procedure completion accounting | per-invocation lifecycle record with active, running, completed, limited, and failed states; final interaction records reach completed only after their required results |
+| Workspace script language without eligible candidate | `Resolve Information`, then retry or reported limitation |
 | User-added Executor Identity lifetime | Task scope by default; persistent scope through review of the `Approved executor identities` property change in Governance Configuration |
 | Executive fragment lacks local configuration | configuration absence is evaluated only by `Establish Governance Configuration` after authority classification covers the complete loaded context |
 | Protected hidden-artifact access | configured selector matching covers direct and indirect generic filesystem access; only a Behavioral-Contract-established Dedicated Manager effect receives the narrow exception |
 | Assumption eligibility | conditional-result, all-plausible-values Operation, and pre-effect Verification gates |
 | Mixed Evidence Strength indicators | lexicographic comparison in defined indicator order; material ties become Unresolved |
 | Approach tie after ordinary tie-breakers | lexical description ordering selects one candidate |
+| Finalized Action Task remained implicitly active | `CompleteInteraction` -> `CloseActionTask` -> `FinalResponse`; closure expires ordinary Task-scoped state, verifies closed state, and clears the active reference before emission, while terminal records finalize afterward |
+| Historical mutable evidence appeared current | closure and state-changing Operations assign `INFORMATION_INVALIDATED`; Historical Import re-enters `ResolveInformation` |
 
 ### External Waits
 
@@ -1570,7 +1694,7 @@ The model retains three reliable `EXTERNAL_WAIT` families: clarification, author
 
 ### Residual Judgment Points
 
-The graph contains zero known dead branches. Classification still requires evidence-based judgment for materiality, plausible causal paths to Harmful Outcomes, Evidence Item suitability, whether an Artifact matches the operating-system-specific hidden class, whether an Operation is provided by the responsible manager with the claimed Behavioral Contract, and whether a correction or alternative can satisfy a Completion Criterion. These are classifier inputs with defined successors, so uncertainty in their evaluation can affect which branch is selected without creating an unterminated branch.
+The graph contains zero known dead branches. Classification still requires evidence-based judgment for materiality, plausible causal paths to Harmful Outcomes, Evidence Item suitability, Validity Conditions and invalidating events, whether an Artifact matches the operating-system-specific hidden class, whether an Operation is provided by the responsible manager with the claimed Behavioral Contract, and whether a correction or alternative can satisfy a Completion Criterion. These are classifier inputs with defined successors, so uncertainty in their evaluation can affect which branch is selected without creating an unterminated branch.
 
 ## Simplified Mental Model
 
@@ -1581,23 +1705,26 @@ USER MESSAGE
   -> manage any clarification, authorization, or confirmation wait
   -> confirm harmful outcomes through the shared confirmation Procedure
   -> establish Action Task, continuation, or context-only interaction
-  -> resolve information
+  -> resolve information and current validity
   -> build Task Specification
   -> activate Procedures
   -> track every Procedure invocation
   -> classify every Operation
-  -> execute and collect evidence
+  -> execute, collect evidence, and invalidate affected observations
   -> verify and correct
   -> finalize
+  -> close a finalized Action Task and expire Task-scoped state
   -> emit exactly one Final Response, Context Response, or Pending Request disposition
 
 At every point:
   unknown information receives a disposition
+  State-dependent Information is current or invalidated for its intended use
   Claims receive a status
   Operations receive an eligibility state
   Pending Requests retain an origin, response conditions, and resume classification
   new Procedure Triggers extend the active set
   path closure rejoins unaffected work or finalization
   failures enter recovery or reported limitation
+  closed Task records remain historical and selected imports re-enter information resolution
   current-message handling reaches InteractionComplete only after an observable response
 ```

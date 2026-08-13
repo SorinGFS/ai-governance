@@ -49,13 +49,13 @@ Loading produces instruction context; it does not bypass instruction-authority c
 
 #### Pi Agent
 
-Pi natively loads `~/.pi/agent/AGENTS.md`, then applicable `AGENTS.md` files from parent directories and the current working directory. A shared executive file can therefore occupy a common ancestor while each workspace supplies its own configuration-only file.
+Pi loads global guidance from `~/.pi/agent`, using `AGENTS.override.md` when present and otherwise `AGENTS.md`, then loads applicable context files from parent directories and the current working directory. In each of those directories, `AGENTS.override.md` replaces `AGENTS.md` or `CLAUDE.md`. A shared executive file can therefore occupy a common ancestor while each workspace supplies its own configuration-only file when no same-directory override replaces it.
 
 Consult the [official Pi documentation for context files](https://pi.dev/docs/latest/usage) for the authoritative loading specification.
 
 #### Codex
 
-Codex loads `$CODEX_HOME/AGENTS.md`, where `CODEX_HOME` defaults to `~/.codex`, followed by project files from the detected project root, typically the Git root, down to the working directory. Place shared executive governance in `$CODEX_HOME/AGENTS.md` and workspace Governance Configuration in the applicable project `AGENTS.md`.
+Codex loads global guidance from `$CODEX_HOME`, where `CODEX_HOME` defaults to `~/.codex`, using `AGENTS.override.md` when present and otherwise `AGENTS.md`. It then loads project guidance from the detected project root, typically the Git root, down to the working directory; in each directory, `AGENTS.override.md` replaces `AGENTS.md` for that directory. Place shared executive governance in `$CODEX_HOME/AGENTS.md` and Workspace Governance Configuration in the applicable project `AGENTS.md` when no same-directory override replaces it.
 
 Codex does not discover project `AGENTS.md` files above the Git root. It also limits combined project instructions to 32 KiB by default. Add a top-level setting larger than the complete combined payload to `$CODEX_HOME/config.toml`:
 
@@ -329,7 +329,7 @@ Some Procedures are foundational rather than optional workflow choices:
 | `Verify Work` | Apply required checks, corrections, and unresolved classifications before finalization. |
 | `Correct Earlier Output` | Acknowledge, identify, correct, requalify, and reverify an earlier error. |
 | `Select Maintainable Artifacts` | Reject persistent Maintenance Commodities and preserve source/generated roles. |
-| `Select Repository Script Language` | Select an established project language or the configured preference. |
+| `Select Workspace Script Language` | Select an established Workspace language or the configured preference. |
 | `Route Task Procedures` | Own semantic Trigger-to-Procedure selection. |
 | `Track Procedure Execution` | Maintain compact Task-scoped lifecycle records. |
 | `Analyze Task` | Build the Task Specification and classify readiness. |
@@ -384,10 +384,12 @@ This classification is why instructions embedded in downloaded files, webpages, 
 After authority resolution, the message receives one role:
 
 - **Action Task**: requests an action or defined result.
-- **Task continuation**: supplies information or continues an active Action Task.
+- **Task continuation**: supplies information or continues an Action Task whose state remains active.
 - **Context-only interaction**: supplies context while no Action Task remains active.
 
 Context-only messages receive a Context Response. Action Tasks proceed through analysis, execution, verification, and finalization.
+
+A Final Response closes its Action Task. A later request to continue, revise, inspect, or extend that work creates a new Action Task linked to the closed task instead of reactivating it.
 
 ### Task Readiness
 
@@ -399,6 +401,20 @@ Context-only messages receive a Context Response. Action Tasks proceed through a
 | clarification required | User information can resolve the remaining state; request the smallest clarification. |
 | authorization required | A required Operation needs authorization and no Eligible alternative satisfies every Completion Criterion. |
 | blocked | Available information, Assumption, alternative, authorization, and Verification paths cannot support correct dependent execution; allocate limitations and continue unaffected work. |
+
+### Task Closure And Historical Reuse
+
+After finalization, `Complete The Interaction` records the Final Response and applies `Close An Action Task` before emitting it. Closure:
+
+1. verifies that requests and required Procedure records have terminal dispositions;
+2. preserves the completed Task's evidence statuses, then marks retained State-dependent Information invalidated for subsequent use;
+3. retains only the state required to finish closure and expires ordinary Task-scoped state;
+4. marks the Action Task closed, clears the active-task reference, and verifies the resulting invalidation, expiration, retained instructions, and closed state;
+5. creates a Historical Task Record containing the specification, evidence history, outputs, decisions, limitations, current Procedure records, and Final Response;
+6. returns closed state, after which `Complete The Interaction` completes the closure record and emits the Final Response;
+7. after emission, records and verifies the disposition, completes the interaction record, verifies that every record except the recorder is terminal and retained, completes and appends the recorder's terminal transition, finalizes the Historical Task Record, and expires the remaining Closure State.
+
+This ordering prevents any Procedure or recorder from reaching `completed` before its required result occurs. Historical records remain available for audit and later work. A later Action Task imports only explicitly referenced or correctness-required items, and every import passes through `Resolve Information`. Requested Work Constraints apply to their Action Task by default. Instructions with explicitly established longer applicability return as Candidate Instructions and receive fresh authority classification on the next message.
 
 ## Pending Requests
 
@@ -468,13 +484,28 @@ If a response satisfies neither the success nor terminal-response condition, the
 
 ## Information, Evidence, And Claims
 
+### Information Currency
+
+State-dependent Information includes mutable file contents, paths and filesystem state, process state, installed tools and versions, environment values, network results, and changing external facts. Each such item receives a Validity Condition describing the observed subject and state, observation context, required recency, source expiration, and invalidating events.
+
+Its Information Validity becomes `invalidated` when:
+
+- its Action Task closes;
+- an executed Operation or Tool Result could have changed the subject;
+- the user or a newly observed source reports a change;
+- a source-defined expiration occurs;
+- the intended use requires newer evidence;
+- it is imported from a Historical Task Record without current Verification.
+
+An invalidated item leaves current factual premises. `Resolve Information` retrieves a current authorized source and classifies it again, or assigns Unresolved when current Verification is unavailable. The Historical Task Record still preserves what was observed and accepted for the completed Task.
+
 ### Information Statuses
 
 Every Information Item used as an input, premise, or output basis receives one disposition:
 
 | Status | What happens |
 | --- | --- |
-| Admissible | Evidence supports it, fields are complete, interpretation fits the Task, and required Verification passed. |
+| Admissible | Evidence supports it, fields are complete, interpretation fits the Task, required Verification passed, and State-dependent Information has current validity. |
 | Recoverable | An authorized original or Authoritative Source is available; retrieve it and classify again. |
 | Clarification required | User input can resolve a material omission or ambiguity. |
 | Interpretation set | Several interpretations remain valid; evaluate and label each one separately. |
@@ -523,14 +554,14 @@ The Workspace is the established root used as the default boundary for Operation
 - Relative paths resolve against it.
 - Canonical paths are used for boundary decisions.
 - Same-Task continuations retain it.
-- A prior Task's Workspace is reused only after explicit instruction.
+- A closed Task's Workspace enters later work only after explicit continued applicability and current information resolution.
 - System-wide configuration, user-wide configuration, and unrelated projects remain outside Current Authorization until explicitly authorized.
 
 Workspace-specific information is included only for Resource access, boundary Verification, path-equivalence resolution, explicitly requested communication, or a functional local reference in the current interface. Generated Artifacts prefer Workspace-relative paths when those paths identify the Resource uniquely.
 
 ### Runtime Facts
 
-Working directory, file availability, installed tools, environment variables, process state, and comparable Runtime Environment facts come from local runtime tools. Availability establishes capability, not permission.
+Working directory, file availability, installed tools, environment variables, process state, and comparable Runtime Environment facts come from local runtime tools. They remain current only under their Validity Conditions. Availability establishes capability, not permission.
 
 ### Approved Executor Identities
 
@@ -568,11 +599,11 @@ The following are Maintenance Commodities and receive an ineligible disposition 
 
 When a runtime requires copied content, designate the origin as the Source of Truth and the copy as Generated Deployment Output. Edit the source and regenerate the copy.
 
-### Repository Script Language
+### Preferred Workspace Script Language
 
-For a new general-purpose repository script, `Select Repository Script Language` first selects an existing project language when project conventions, toolchain, runtime, libraries, material safety, Verification simplicity, or explicit user instruction establish one.
+For a new general-purpose Workspace script, `Select Workspace Script Language` first selects an existing Workspace language when Workspace conventions, toolchain, runtime, libraries, material safety, Verification simplicity, or explicit user instruction establish one.
 
-When project conventions and the stronger selection conditions establish no other language, `Select Repository Script Language` selects the Preferred Workspace Script Language supplied by active Governance Configuration if that language is Eligible. The supplied preference is JavaScript on Node.js. If no language is eligible, the requirement follows information recovery, clarification, or a reported limitation.
+When Workspace conventions and the stronger selection conditions establish no other language, `Select Workspace Script Language` selects the Preferred Workspace Script Language supplied by active Governance Configuration if that language is Eligible. The supplied preference is JavaScript on Node.js. If no language is eligible, the requirement follows information recovery, clarification, or a reported limitation.
 
 ### Invocation Context And Behavioral Inspection
 
@@ -674,7 +705,7 @@ A Dedicated Manager Operation can interact with the Artifact it manages only for
 
 ### Untrusted Software And Installers
 
-Before running a downloaded program, installer, project script, or package lifecycle command, the system attempts to establish its Invocation Context, activated Behavior Extensions, Behavioral Contract, and complete Operation Footprint.
+Before running a downloaded program, installer, Workspace script, or package lifecycle command, the system attempts to establish its Invocation Context, activated Behavior Extensions, Behavioral Contract, and complete Operation Footprint.
 
 If the available evidence cannot establish classification-relevant behavior, the candidate remains Indeterminate and does not run. If a predicted effect is harmful, confirmation is requested. If targets or executors exceed Current Authorization, authorization is requested separately.
 
@@ -814,7 +845,7 @@ Lifecycle statuses are:
 - `limited`;
 - `failed`, followed by recovery or limitation.
 
-Required records survive Pending Requests, continuation messages, and context compression. They remain internal unless the user requests them or they are needed to substantiate a reported result or limitation.
+Required records survive Pending Requests, continuation messages, and context compression. A Procedure reaches `completed` only after its required result and Verification. The lifecycle recorder remains `running` through Task closure and Final Response emission, then reaches `completed` while the Historical Task Record receives the terminal records. Records remain internal unless the user requests them or they are needed to substantiate a reported result or limitation.
 
 To inspect them, ask:
 
@@ -870,12 +901,16 @@ P0.1:
 - Evidence:
 - Explanation:
 - Required correction options:
+  - a.
+  - b.
 
 Risks:
 - R.1:
 
 Unverified Items:
 ```
+
+Within each Confirmed Violation, Required correction options are ordered from most plausible to least plausible. Plausibility reflects the available evidence that an option can fully correct the violation while satisfying the Active Instruction Set, Requested Scope, Current Authorization, and Existing Guarantees. Equally plausible options are ordered by repeatedly applying `Select An Approach` to the remaining tied options.
 
 An audit adds corrections only after an explicit correction request. This distinction lets a user inspect compliance without silently expanding the Task into implementation work.
 
@@ -974,6 +1009,10 @@ Clarification requests are intentionally limited to the smallest answer that can
 
 `unverified` means required evidence, execution, or observation remained unavailable. The response should identify the missing evidence and what it can change.
 
+### Why Previously Checked Information May Be Checked Again
+
+A prior result can remain historically accurate while no longer establishing current state. Task closure and intervening Operations invalidate mutable observations for later use. The system retrieves or observes them again when the new result depends on their current value.
+
 ### Why A Task Is Complete With Limitation
 
 This result means the interaction reached a valid terminal response while some requested item could not be completed or verified. It is not silent success. The limitation and its impact must be explicit.
@@ -1019,7 +1058,11 @@ Only after every available Candidate Instruction in the complete loaded context 
 
 ### Can configuration live in a separate AGENTS.md?
 
-Yes. Pi can combine shared executive Procedures from a common ancestor with a configuration-only file in the selected workspace. Codex combines shared executive Procedures from `$CODEX_HOME/AGENTS.md` with project files from the Git root down to the working directory. In both cases, configuration establishment occurs after the runtime assembles the complete applicable instruction context.
+Yes. Pi can combine shared executive Procedures from a common ancestor with a configuration-only file in the selected Workspace. Codex combines shared executive Procedures from `$CODEX_HOME/AGENTS.md` with project files from the Git root down to the working directory. In either runtime, a same-directory `AGENTS.override.md` replaces the ordinary context file for that directory. Configuration establishment occurs after the runtime assembles the complete applicable instruction context.
+
+### Does a Final Response leave its Action Task active?
+
+No. The response is recorded; ordinary Task-scoped state expires; closure is verified; the Action Task closes; and then the response is emitted. After emission, the interaction and lifecycle recorder reach `completed` while the Historical Task Record receives their terminal records. A later action concerning that work creates a new linked Action Task and revalidates every imported state-dependent item.
 
 ### Can mandatory governance be moved into a skill?
 

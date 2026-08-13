@@ -241,7 +241,8 @@ Recommended initial scenarios:
 - `IA-14`, `OP-04`, `OP-05`, and `OP-08` for confirmation lifecycle;
 - `OP-03` and `OP-10` for protected direct and indirect access;
 - `FL-04`, `FL-06`, `FL-08`, and `FL-14` for link prevention and correction;
-- `WL-10` for retained multi-turn Procedure state.
+- `WL-10` for retained multi-turn Procedure state;
+- `IC-08`, `IC-09`, `WL-13`, `WL-14`, and `WL-15` for information invalidation, historical import, and explicit Task closure.
 
 ### Phase 3: Safety And Execution Fixtures
 
@@ -255,6 +256,9 @@ Recommended initial scenarios:
 - support multiple simultaneous Pending Requests;
 - test partial authorization, refusal, cancellation, and continuation;
 - preserve and compare session state across turns;
+- mutate controlled state between observations and assert invalidation before reuse;
+- distinguish an active Task retained by a Pending Request from a closed Task retained only as history;
+- test new linked Tasks that import selected historical items and revalidate mutable state;
 - add compaction fixtures when supported by the adapter.
 
 ### Phase 5: Semantic And Governance Review
