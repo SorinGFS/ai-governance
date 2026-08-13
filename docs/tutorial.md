@@ -106,7 +106,7 @@ Format each property value as comma-separated items on the property line or as i
 
 - **Protected filesystem artifacts**: .git, operating-system-specific hidden artifacts, .ssh, .gnupg, .bashrc, .bash_profile, .bash_login, .bash_logout, .profile, .gitconfig, .git-credentials, .netrc, .bash_history, .zsh_history, Microsoft.PowerShell_profile.ps1, .aws, .azure, .kube, .docker, .terraform.d
 - **Preferred workspace script language**: JavaScript on Node.js.
-- **Approved executor identities**: PowerShell, Git Bash, Bash, Node.js runtime, npm CLI, Python interpreter.
+- **Approved executor identities**: PowerShell, Git Bash, Git CLI, Bash, Node.js runtime, npm CLI, Python interpreter.
 ```
 
 After all applicable AGENTS content is loaded, `Resolve Instruction Authority` assigns a status to every available Candidate Instruction. `Establish Governance Configuration` then collects active configuration properties and establishes configured terms before requested-work handling begins. The executive file is never treated as missing configuration merely because its own fragment has no `Governance Configuration` section.
@@ -119,6 +119,7 @@ The same list can use indented Markdown items:
 - **Approved executor identities**:
   - PowerShell
   - Git Bash
+  - Git CLI
   - Bash
 ```
 
@@ -569,6 +570,7 @@ Approved Executor Identities come from active Governance Configuration. The supp
 
 - PowerShell;
 - Git Bash;
+- Git CLI;
 - Bash;
 - Node.js runtime;
 - npm CLI;
@@ -576,7 +578,7 @@ Approved Executor Identities come from active Governance Configuration. The supp
 
 Every Direct Executor and Indirect Executor is classified. An approved identity satisfies only the executor-authorization part of eligibility. Operation Targets, Side Effects, Workspace boundaries, harmful outcomes, and Permanent Constraints still apply.
 
-An installed tool is not automatically an approved identity. For example, Git Bash and a Git command-line executable are distinct software identities.
+An installed tool is not automatically an approved identity. Git Bash and Git CLI are distinct software identities, and the supplied configuration approves each independently.
 
 To add an Executor Identity for the current Task, explicitly grant Scoped User Authorization. A persistent addition changes the Governance Configuration property and passes through `Author Rules` and `Review Rules`.
 

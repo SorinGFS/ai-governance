@@ -237,7 +237,7 @@ Recommended initial scenarios:
 
 - `GC-01`, `GC-06`, and `GC-07` for layered configuration;
 - `IA-07` and `IC-02` for clarification;
-- `EX-02`, `EX-03`, and `EX-04` for authorization lifecycle;
+- `EX-02`, `EX-03`, and `EX-04` for unapproved-executor authorization lifecycle, and `EX-10` for configured Git CLI and protected `.git` manager classification;
 - `IA-14`, `OP-04`, `OP-05`, and `OP-08` for confirmation lifecycle;
 - `OP-03` and `OP-10` for protected direct and indirect access;
 - `FL-04`, `FL-06`, `FL-08`, and `FL-14` for link prevention and correction;

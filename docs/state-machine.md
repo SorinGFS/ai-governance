@@ -1680,6 +1680,7 @@ The mechanical graph audit reports zero `UNREACHABLE` states and zero `UNTERMINA
 | Procedure completion accounting | per-invocation lifecycle record with active, running, completed, limited, and failed states; final interaction records reach completed only after their required results |
 | Workspace script language without eligible candidate | `Resolve Information`, then retry or reported limitation |
 | User-added Executor Identity lifetime | Task scope by default; persistent scope through review of the `Approved executor identities` property change in Governance Configuration |
+| Configured Git CLI manager operation | classify its invoking Executor and Git CLI independently; satisfy Git CLI executor authorization from Governance Configuration; apply the protected-artifact exception only to Behavioral-Contract-established Git-managed `.git` effects; classify every remaining target and effect through the normal eligibility gates |
 | Executive fragment lacks local configuration | configuration absence is evaluated only by `Establish Governance Configuration` after authority classification covers the complete loaded context |
 | Protected hidden-artifact access | configured selector matching covers direct and indirect generic filesystem access; only a Behavioral-Contract-established Dedicated Manager effect receives the narrow exception |
 | Assumption eligibility | conditional-result, all-plausible-values Operation, and pre-effect Verification gates |

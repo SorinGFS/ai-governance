@@ -917,4 +917,4 @@ Format each property value as comma-separated items on the property line or as i
 
 - **Protected filesystem artifacts**: .git, operating-system-specific hidden artifacts, .ssh, .gnupg, .bashrc, .bash_profile, .bash_login, .bash_logout, .profile, .gitconfig, .git-credentials, .netrc, .bash_history, .zsh_history, Microsoft.PowerShell_profile.ps1, .aws, .azure, .kube, .docker, .terraform.d
 - **Preferred workspace script language**: JavaScript on Node.js.
-- **Approved executor identities**: PowerShell, Git Bash, Bash, Node.js runtime, npm CLI, Python interpreter.
+- **Approved executor identities**: PowerShell, Git Bash, Git CLI, Bash, Node.js runtime, npm CLI, Python interpreter.
