@@ -59,6 +59,7 @@ The governance source consists of `README.md` and `AGENTS.md`.
 17. **Information Currency**: State-dependent information remains usable only while its recorded Validity Condition is current for the intended use; invalidated information receives fresh retrieval or an unresolved disposition.
 18. **Closed-Task Isolation**: Final response handling closes the Action Task, expires Task-scoped state, and retains prior work as historical evidence rather than current state.
 19. **Provenance-Preserved Authority**: Instruction authority follows the content's delivery origin through retrieval and transformation, while task-specific user decisions remain non-delegable and must be supplied through Direct User Input.
+20. **Explainable Governed Actions**: Users can request plain-language explanations grounded in applicable instructions, task decisions, Evidence Items, and Procedure Execution Records.
 
 ---
 
@@ -103,6 +104,7 @@ They define the problems that the Procedure model responds to.
 - `Partial_refactoring`: May modify only some occurrences, leaving inconsistencies.
 - `Version_confusion`: Can mix features from different language or library versions.
 - `Opaque_executable_behavior`: Executable implementation details may be unavailable or impractical to inspect recursively, while configuration, scripts, hooks, and plugins activated by an invocation can materially change behavior.
+- `Opaque_code_intent`: Code can expose its mechanics while leaving file responsibilities and processing phases difficult to identify.
 
 ### Documents And Data
 
@@ -441,12 +443,12 @@ The table identifies the executive owner and result for each cross-cutting decla
 
 | Executive Procedure | Declarative responsibility |
 | --- | --- |
-| `Reason From Evidence` | Connect conclusions to Facts, Assumptions, and explicit Dependencies. |
+| `Reason From Evidence` | Connect conclusions and requested action explanations to their evidence and governing basis. |
 | `Research Sources` | Gather and compare evidence by Source authority and Evidence Strength. |
 | `Plan Work` | Produce executable steps, Dependencies, Risks, and Completion Criteria. |
 | `Select Tools And Operations` | Validate and invoke the eligible tool or Operation required for correctness. |
-| `Implement Code` | Produce verified software changes within Requested Scope. |
-| `Review Code` | Compact completed code while maintaining behavior and verification. |
+| `Implement Code` | Produce verified software changes with concise structural orientation within Requested Scope. |
+| `Review Code` | Verify required Orientation Comments and compact completed code while maintaining behavior and Verification. |
 | `Edit Content` | Apply requested modifications through a meaning-integrity record. |
 | `Create Documents` | Produce structured documents with consistent terms, references, and Canonical Content. |
 | `Review Documents` | Compact document meaning through authoritative references and semantic-integrity checks. |
@@ -547,11 +549,13 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | Governing Artifacts include prompts, policies, standards, schemas, specifications, routing rules, examples, checklists, and references. | `Terms`, `Author Rules`, `Optimize Rules`, `Review Rules` |
 | Quality criteria and Acceptance Scenarios share pass, failure-with-exact-mismatch, and unverified-with-missing-evidence Check Results before governing-artifact acceptance. | `Evaluate Governing Artifact Quality`, `Review Rules` |
 | Coding and documentation workflows include dedicated post-work semantic-integrity reviews. | `Implement Code`, `Review Code`, `Create Documents`, `Review Documents` |
+| Comment-eligible source created or materially modified within Requested Scope identifies file, function, method, language-level procedure, loop, and distinct logical-section purpose through concise Orientation Comments; review rewrites required mechanical comments and removes other mechanical, duplicate, obsolete, or misleading comments. | `Implement Code`, `Review Code` |
 | Grammatical structure keeps relationships among actions, objects, and qualifiers unambiguous. | `Evaluate Governing Artifact Quality` |
 | The Preferred Workspace Script Language established by Governance Configuration is selected when Workspace conventions and stronger constraints establish no other eligible language. | `Establish Governance Configuration`, `Select Workspace Script Language` |
 | Persistent designs use deterministic regeneration, validation, and update processes; copied runtime layouts remain Generated Deployment Output. | `Select Maintainable Artifacts` |
 | Compatible extensions maintain instruction authority; an executive Governing Artifact ends its executive content with the task-independent Authority Guard, while a Governance Configuration section, when present, is the final non-executive section. | `Resolve Instruction Authority`, `Evaluate Governing Artifact Quality` |
 | Completed work remains auditable against its Active Instruction Set, Requested Scope, evidence, and required Procedures. | `Audit Instructions`, `Finalize Task` |
+| On request, a governed action or disposition receives a plain-language explanation grounded in applicable instructions, task decisions, Evidence Items, and Procedure Execution Records; historical information is identified as historical and unavailable basis is reported. | `Reason From Evidence` |
 | Every handled user message emits exactly one Final Response, Context Response, or Pending Request disposition; retained waits name the state resumed by a later response, and Final Responses follow successful Task closure. | `Manage A Pending Request`, `Complete The Interaction`, `Close An Action Task` |
 | Audit results are violations found when evidence confirms a violation, inconclusive when material evidence remains unavailable, and pass when remaining uncertainty has an isolated effect on the result. | `Audit Instructions` |
 

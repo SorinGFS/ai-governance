@@ -277,7 +277,7 @@ Optimize Rules in AGENTS.md while preserving every Existing Guarantee.
 
 | User intent or useful terms | Activated Procedure | Example request |
 | --- | --- | --- |
-| analyze, diagnose, troubleshoot, compare, explain a conclusion | `Reason From Evidence` | "Diagnose why these two results disagree." |
+| analyze, diagnose, troubleshoot, compare, explain a conclusion, action, or disposition | `Reason From Evidence` | "Explain why that Operation was blocked." |
 | research, search sources, look up, literature review, gather facts | `Research Sources` | "Research the current official API behavior." |
 | plan, milestones, dependencies, risks, completion criteria | `Plan Work` | "Plan this migration with dependencies and acceptance criteria." |
 | inspect runtime, use a tool, run a command, retrieve data, interpret a Tool Result | `Select Tools And Operations` | "Inspect the installed runtime and run the relevant test command." |
@@ -334,11 +334,11 @@ Some Procedures are foundational rather than optional workflow choices:
 | `Route Task Procedures` | Own semantic Trigger-to-Procedure selection. |
 | `Track Procedure Execution` | Maintain compact Task-scoped lifecycle records. |
 | `Analyze Task` | Build the Task Specification and classify readiness. |
-| `Reason From Evidence` | Produce evidence-linked and assumption-bounded conclusions. |
+| `Reason From Evidence` | Produce evidence-linked conclusions and plain-language explanations of governed actions. |
 | `Research Sources` | Gather and compare primary, official, and supporting sources. |
 | `Plan Work` | Order prerequisites, dependencies, risks, mitigations, and Completion Criteria. |
-| `Implement Code` | Produce scoped, compatible, verified software changes. |
-| `Review Code` | Compact completed code while preserving behavior and Verification. |
+| `Implement Code` | Produce scoped, compatible, verified software changes with concise Orientation Comments. |
+| `Review Code` | Verify required Orientation Comments and compact completed code while preserving behavior and Verification. |
 | `Edit Content` | Apply requested revisions through a meaning-preservation record. |
 | `Create Documents` | Create structured documents while preserving references and Canonical Content. |
 | `Review Documents` | Remove duplicated document meaning while preserving required content. |
@@ -735,12 +735,34 @@ Implementation work establishes APIs, language features, library functions, comm
 
 1. preserves architecture and conventions within Requested Scope;
 2. limits changes to the Task Specification;
-3. covers edge cases and related occurrences;
-4. runs applicable tests and Verification;
-5. reports unavailable Verification;
-6. applies `Review Code` after implementation.
+3. adds concise Orientation Comments to applicable code created or materially modified within Requested Scope;
+4. covers edge cases and related occurrences;
+5. runs applicable tests and Verification;
+6. reports unavailable Verification;
+7. applies `Review Code` after implementation.
 
-`Review Code` removes task-introduced duplication, unnecessary indirection, unreachable code, unused code, and comments that merely restate code while preserving observable behavior and interfaces.
+An Orientation Comment states the purpose or responsibility of a source file, function, method, language-level procedure, loop, or distinct logical section. A distinct logical section is a contiguous code block with a separate processing phase or responsibility. Material syntax, format, invariants, Constraints, Side Effects, or rationale belong in the comment when they help correct understanding or modification.
+
+A Comment-eligible Source File is maintained directly as project source within the Workspace and has syntax that permits comments. Generated, vendored, minified, and comment-incompatible Artifacts receive inapplicable comment-insertion status. For each Comment-eligible Source File created or materially modified within Requested Scope, place an Orientation Comment at the file opening after required preambles. Place one before each applicable function, method, language-level procedure, loop, and distinct logical section created or materially modified by the work. Reuse an adequate existing comment and use the simplest language-valid form consistent with project formatting.
+
+Every coding task that activates `Implement Code` receives this behavior automatically.
+
+Purpose-bearing comments remain short:
+
+```js
+// Resolves configured executor identities into the current authorization set.
+function establishApprovedExecutors(configuredExecutors) {
+  // Preserve first-seen order while removing repeated identities.
+  for (const executor of configuredExecutors) {
+    // Apply normalization before comparing software-product identities.
+    // ...
+  }
+}
+```
+
+A mechanical comment such as `// Loop through executors` only paraphrases visible syntax. `Review Code` rewrites it when that location requires an Orientation Comment, removes it from other locations, removes duplicate, obsolete, or misleading comments, and removes task-introduced duplication, unnecessary indirection, unreachable code, and unused code while preserving observable behavior and interfaces.
+
+Required preambles retain their required position, and unrelated source units remain outside the Change Surface.
 
 ### Existing Content
 
@@ -869,6 +891,21 @@ To inspect them, ask:
 Show the Procedure Execution Records for this task.
 Include the Trigger, status history, outcome, and evidence references.
 ```
+
+### Explain An Action
+
+Ask in ordinary language when an action, tool choice, question, block, limitation, or result needs more explanation. No special triggering term is required:
+
+```text
+Explain why you selected that command.
+Explain why that Operation was blocked.
+Explain why you asked for confirmation.
+What evidence and governance rule produced that result?
+```
+
+`Reason From Evidence` explains the action or disposition in plain language from the applicable instructions, task decisions, Evidence Items, and Procedure Execution Records. Historical information is identified as historical, and unavailable support is reported instead of reconstructed. The explanation presents the recorded governance basis rather than private reasoning.
+
+For the compact technical trace as well as the explanation, explicitly request the Procedure Execution Records.
 
 ### Finalization Results
 

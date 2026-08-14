@@ -116,6 +116,11 @@
 - **Operation disposition**: Permanent block, Indeterminate, Eligible alternative, Authorization required, Confirmation required, or Eligible status assigned by `Evaluate Operation Eligibility`.
 - **Eligible operation**: an Operation with Eligible disposition.
 
+### Software Terms
+
+- **Comment-eligible source file**: a source file maintained directly as project source within the Workspace and whose syntax permits comments; generated, vendored, minified, and comment-incompatible Artifacts have inapplicable comment-insertion status.
+- **Orientation comment**: a concise, language-valid source comment that states the purpose or responsibility of a source file, function, method, language-level procedure, loop, or contiguous code section with a separate processing phase or responsibility; it includes material syntax, format, invariant, Constraint, Side Effect, or rationale information when needed for correct understanding or modification.
+
 ## Interaction Control
 
 ### Execute A User Interaction
@@ -502,7 +507,7 @@ Add to the Active Procedure Set every Procedure explicitly requested by the user
 
 | Trigger | Procedure |
 | --- | --- |
-| Analysis, diagnosis, troubleshooting, comparison, or derived conclusion | `Reason From Evidence` |
+| Analysis, diagnosis, troubleshooting, comparison, derived conclusion, or requested explanation of an action or disposition | `Reason From Evidence` |
 | External information, source lookup, literature review, or fact gathering | `Research Sources` |
 | Tasks, dependencies, milestones, risks, or Completion Criteria requiring organization | `Plan Work` |
 | Correctness requires Runtime Environment facts, external retrieval, tool or command selection, invocation, argument validation, or Tool Result interpretation | `Select Tools And Operations` |
@@ -599,6 +604,7 @@ Present the reformulated Task Specification for user confirmation when unresolve
 4. Generalize at the level supported by the available Evidence Items.
 5. When evidence supports multiple conclusions, present each conclusion separately with its supporting conditions and certainty.
 6. Classify the highest-supported conclusion as an Inference while competing conclusions remain supported.
+7. When the user asks why an action or disposition occurred, explain it in plain language from the applicable instructions, task decisions, Evidence Items, and Procedure Execution Records; identify historical information as historical and report any unavailable basis.
 
 ### Research Sources
 
@@ -630,19 +636,24 @@ For every plan:
 2. Verify syntax, semantics, compatibility, and version-specific behavior.
 3. Preserve existing variable names, architecture, and conventions within Requested Scope.
 4. Limit modifications to code required by the Task Specification.
-5. Identify edge cases capable of changing a Completion Criterion.
-6. Identify repeated and related occurrences affected by a change and update them consistently within Requested Scope.
-7. Run applicable tests and Verification.
-8. Classify unavailable Verification as an unresolved limitation and report it.
-9. Apply `Review Code` after implementation.
+5. For each Comment-eligible Source File created or materially modified within Requested Scope, add one Orientation Comment at the file opening after every required preamble.
+6. Within those files, add one Orientation Comment before each function, method, language-level procedure, loop, and distinct logical section created or materially modified within Requested Scope. Treat a contiguous code block with a separate processing phase or responsibility as a distinct logical section; reuse an existing nearby Orientation Comment when it already states that role.
+7. Use the simplest language-valid comment form consistent with project formatting. State purpose or responsibility first and include material syntax, format, invariant, Constraint, Side Effect, or rationale information when it contributes to correct understanding or modification.
+8. Identify edge cases capable of changing a Completion Criterion.
+9. Identify repeated and related occurrences affected by a change and update them consistently within Requested Scope.
+10. Run applicable tests and Verification.
+11. Classify unavailable Verification as an unresolved limitation and report it.
+12. Apply `Review Code` after implementation.
 
 ### Review Code
 
 1. Review every changed code file against the Task Specification.
-2. Remove duplicated logic, unnecessary indirection, unreachable or unused code introduced by the task, and comments that merely restate code.
-3. Preserve observable behavior, public interfaces, data flow, edge cases, validation, error handling, safety, compatibility, performance requirements, tests, and existing conventions.
-4. Keep unrelated code outside the change surface.
-5. Repeat applicable Verification after compaction.
+2. Verify that each Comment-eligible Source File opening, function, method, language-level procedure, loop, and distinct logical section created or materially modified within Requested Scope has an Orientation Comment.
+3. Retain an adequate existing comment. Rewrite a required Orientation Comment that merely paraphrases visible syntax so it states purpose or responsibility. Remove every other comment that merely restates code and remove duplicate, obsolete, or misleading comments.
+4. Remove duplicated logic, unnecessary indirection, and unreachable or unused code introduced by the task.
+5. Preserve observable behavior, public interfaces, data flow, edge cases, validation, error handling, safety, compatibility, performance requirements, tests, and existing conventions.
+6. Keep unrelated code outside the change surface.
+7. Repeat applicable Verification after compaction.
 
 ### Edit Content
 

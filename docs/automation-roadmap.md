@@ -272,6 +272,7 @@ Recommended initial scenarios:
 ### Phase 5: Semantic And Governance Review
 
 - define bounded semantic assertions for required message content;
+- add code fixtures and semantic assertions for WL-18 through WL-23 Orientation Comment placement, purpose-bearing content, adequate-comment reuse, review correction, and inapplicable Artifact handling;
 - provide a human-review queue for unresolved judgments;
 - automate document and Governing Artifact setup and observable checks;
 - retain guarantee mapping and quality review as inspectable evidence.

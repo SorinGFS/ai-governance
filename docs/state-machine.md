@@ -963,12 +963,12 @@ Routed Procedures, projected from the sole selection table in `Route Task Proced
 
 | Trigger family | Procedure | State progression |
 | --- | --- | --- |
-| Analysis, diagnosis, troubleshooting, comparison, or derived conclusion | `Reason From Evidence` | observations -> resolved Information Items -> qualified Inferences -> evidence-bounded conclusions |
+| Analysis, diagnosis, troubleshooting, comparison, derived conclusion, or requested explanation of an action or disposition | `Reason From Evidence` | observations and available task records -> resolved Information Items -> qualified Inferences -> evidence-bounded conclusion or plain-language action explanation |
 | External information or source work | `Research Sources` | source search -> authority ranking -> Material Claim cross-check -> qualified Claims and citations |
 | Tasks, Dependencies, milestones, Risks, or Completion Criteria requiring organization | `Plan Work` | prerequisites -> ordered Dependencies -> mitigated Risks -> authorized executable steps and Completion Criteria |
 | Correctness requires Runtime Environment facts, external retrieval, tool or command selection, invocation, argument validation, or Tool Result interpretation | `Select Tools And Operations` | Runtime Environment observed -> options validated -> Operation classified -> Tool Result or reported failure |
-| Programming, debugging, refactoring, code review, configuration, commands, tests, or schemas | `Implement Code` | behavior established -> scoped change -> edge cases and related occurrences -> Verification -> `Review Code` |
-| Completed code or compaction review | `Review Code` | changed files compared -> redundancy removed -> behavior preserved -> Verification repeated |
+| Programming, debugging, refactoring, code review, configuration, commands, tests, or schemas | `Implement Code` | behavior established -> scoped change -> required Orientation Comments -> edge cases and related occurrences -> Verification -> `Review Code` |
+| Completed code or compaction review | `Review Code` | changed files compared -> Orientation Comment coverage verified and mechanical comments corrected -> redundancy removed -> behavior preserved -> Verification repeated |
 | Revision of existing content | `Edit Content` | preservation record -> requested modification -> retained/changed mapping -> coverage Verification |
 | Creation or editing of long-form or structured documentation | `Create Documents` | source resolved -> structure and references maintained -> Canonical Content preserved -> `Review Documents` |
 | Completed documentation or meaning review | `Review Documents` | specification comparison -> duplicated meaning merged -> zero-contribution wording removed -> preservation and completion verified |
