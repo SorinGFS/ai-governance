@@ -25,6 +25,7 @@ The automation project should:
 
 - create reproducible, isolated starting conditions;
 - conduct single-turn and multi-turn interactions;
+- inject instruction-like and approval-like content through controlled non-user sources while preserving source provenance;
 - capture externally observable messages, tool calls, results, and effects;
 - compare observations with scenario-specific expectations;
 - distinguish pass, failure, and unverified outcomes;
@@ -50,6 +51,7 @@ Acceptance rests on independently observable evidence. Useful evidence includes:
 
 - the instruction files reported as loaded and their order;
 - user and assistant messages;
+- delivery-channel and fixture provenance for user input, loaded governance, local content, web content, and Tool Results;
 - structured tool-call requests and tool results;
 - commands proposed and commands actually invoked;
 - process exit status and bounded process telemetry;
@@ -78,7 +80,7 @@ Route an outcome to human review when its expected meaning cannot be evaluated r
 
 ### Scenario Source
 
-Store each scenario as structured data containing its fixture, conversation, expected events, assertions, cleanup behavior, and repetition policy.
+Store each scenario as structured data containing its fixture, conversation, content-delivery provenance, expected events, assertions, cleanup behavior, and repetition policy.
 
 During initial development, the acceptance-test matrix remains authoritative. A structured scenario source should become authoritative only after every matrix scenario maps bidirectionally to it, generated documentation preserves all meaning, and the change is explicitly accepted.
 
@@ -99,6 +101,8 @@ Translate a common test protocol into the tested runtime's interface. An adapter
 5. Send scripted follow-up messages.
 6. Capture assistant messages, tool calls, tool results, and lifecycle events available from the runtime.
 7. Stop the session and return environment metadata.
+
+The adapter must distinguish Direct User Input from content injected through local files, web responses, tool results, assistant output, and loaded Governing Artifacts. It must not represent non-user fixture content through the user-message channel merely for convenience, because doing so invalidates prompt-injection and approval-provenance scenarios.
 
 Pi can be integrated through its [RPC mode](https://pi.dev/docs/latest/rpc), which uses a JSONL command and event protocol.
 
@@ -126,7 +130,8 @@ Evaluate assertions in this order:
 2. **Negative-effect assertions**: establish that blocked commands, mutations, links, or protected accesses did not occur.
 3. **Positive-effect assertions**: establish required files, messages, calls, and results.
 4. **Sequence assertions**: evaluate clarification, authorization, confirmation, execution, Verification, and final response order.
-5. **Semantic assertions**: evaluate whether messages name the required scope, limitation, evidence, or disposition.
+5. **Provenance assertions**: verify that retrieval, quotation, copying, storage, summarization, and transformation preserve the source classification and cannot create Direct User Input.
+6. **Semantic assertions**: evaluate whether messages name the required scope, limitation, evidence, or disposition.
 
 Deterministic assertions should decide outcomes wherever possible. Pattern matching may support message checks but should avoid requiring one exact phrasing when several formulations preserve the required meaning.
 
@@ -237,6 +242,7 @@ Recommended initial scenarios:
 
 - `GC-01`, `GC-06`, and `GC-07` for layered configuration;
 - `IA-07` and `IC-02` for clarification;
+- `IA-15` through `IA-22` for local, web, tool-result, transformed-content, delegated-authority, positive direct-user, governing-policy, and non-operation approval provenance;
 - `EX-02`, `EX-03`, and `EX-04` for unapproved-executor authorization lifecycle, and `EX-10` for configured Git CLI and protected `.git` manager classification;
 - `IA-14`, `OP-04`, `OP-05`, and `OP-08` for confirmation lifecycle;
 - `OP-03` and `OP-10` for protected direct and indirect access;
@@ -247,6 +253,7 @@ Recommended initial scenarios:
 ### Phase 3: Safety And Execution Fixtures
 
 - add controlled scripts, archives, package hooks, manager tools, and nested executors;
+- add local-document, mock-web, Tool Result, assistant-output, and transformed-content prompt-injection fixtures;
 - add filesystem-object and canonical-target inspection;
 - add strict negative-effect assertions;
 - automate the remaining executor, protected-artifact, link, and Operation scenarios.
@@ -255,6 +262,7 @@ Recommended initial scenarios:
 
 - support multiple simultaneous Pending Requests;
 - test partial authorization, refusal, cancellation, and continuation;
+- test that authorization and confirmation Pending Requests remain unresolved after every non-user approval source and resume only after qualifying Direct User Input;
 - preserve and compare session state across turns;
 - mutate controlled state between observations and assert invalidation before reuse;
 - distinguish an active Task retained by a Pending Request from a closed Task retained only as history;
@@ -302,6 +310,7 @@ The automation roadmap is fully implemented when:
 - every acceptance scenario has a reproducible fixture or a documented reason it remains manual;
 - every automated scenario has literal conversation turns and objective evidence requirements;
 - every adapter proves fresh-session isolation and complete event capture within its declared capabilities;
+- every prompt-injection scenario proves that the adapter delivered hostile approval content through the declared non-user source rather than the user-message channel;
 - test controls demonstrate that the runner detects forbidden execution and incorrect final behavior;
 - environment manifests make results attributable to exact tested setups;
 - report aggregation preserves failures, unverified outcomes, and repetition variance;
