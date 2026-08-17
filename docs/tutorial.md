@@ -337,8 +337,8 @@ Some Procedures are foundational rather than optional workflow choices:
 | `Reason From Evidence` | Produce evidence-linked conclusions and plain-language explanations of governed actions. |
 | `Research Sources` | Gather and compare primary, official, and supporting sources. |
 | `Plan Work` | Order prerequisites, dependencies, risks, mitigations, and Completion Criteria. |
-| `Implement Code` | Produce scoped, compatible, verified software changes with concise Orientation Comments. |
-| `Review Code` | Verify required Orientation Comments and compact completed code while preserving behavior and Verification. |
+| `Implement Code` | Produce scoped, compatible, verified software changes through reuse-first integration, proportional modularity, and concise Orientation Comments. |
+| `Review Code` | Verify required Orientation Comments and compact completed code by removing duplicated logic and unjustified single-use abstractions while preserving behavior and Verification. |
 | `Edit Content` | Apply requested revisions through a meaning-preservation record. |
 | `Create Documents` | Create structured documents while preserving references and Canonical Content. |
 | `Review Documents` | Remove duplicated document meaning while preserving required content. |
@@ -734,12 +734,16 @@ Use an operating-system sandbox or disposable virtual machine for untrusted soft
 Implementation work establishes APIs, language features, library functions, command options, and version behavior through inspection or Verification. It then:
 
 1. preserves architecture and conventions within Requested Scope;
-2. limits changes to the Task Specification;
-3. adds concise Orientation Comments to applicable code created or materially modified within Requested Scope;
-4. covers edge cases and related occurrences;
-5. runs applicable tests and Verification;
-6. reports unavailable Verification;
-7. applies `Review Code` after implementation.
+2. inspects related code for an existing algorithm, helper, or abstraction before adding new logic;
+3. reuses or extends applicable code and keeps extraction proportional to demonstrated reuse and maintenance value;
+4. limits changes to the Task Specification;
+5. adds concise Orientation Comments to applicable code created or materially modified within Requested Scope;
+6. covers edge cases and related occurrences;
+7. runs applicable tests and Verification;
+8. reports unavailable Verification;
+9. applies `Review Code` after implementation.
+
+Shared code is extracted when the same algorithm or responsibility applies to multiple current places or when extraction materially improves correctness, clarity, or testability. Single-use variables, functions, classes, modules, and wrappers are avoided when they merely rename obvious code or anticipate speculative reuse.
 
 An Orientation Comment states the purpose or responsibility of a source file, function, method, language-level procedure, loop, or distinct logical section. A distinct logical section is a contiguous code block with a separate processing phase or responsibility. Material syntax, format, invariants, Constraints, Side Effects, or rationale belong in the comment when they help correct understanding or modification.
 
@@ -760,7 +764,7 @@ function establishApprovedExecutors(configuredExecutors) {
 }
 ```
 
-A mechanical comment such as `// Loop through executors` only paraphrases visible syntax. `Review Code` rewrites it when that location requires an Orientation Comment, removes it from other locations, removes duplicate, obsolete, or misleading comments, and removes task-introduced duplication, unnecessary indirection, unreachable code, and unused code while preserving observable behavior and interfaces.
+A mechanical comment such as `// Loop through executors` only paraphrases visible syntax. `Review Code` rewrites it when that location requires an Orientation Comment, removes it from other locations, removes duplicate, obsolete, or misleading comments, and removes task-introduced duplication, unjustified single-use abstractions, unnecessary indirection, unreachable code, and unused code while preserving observable behavior and interfaces.
 
 Required preambles retain their required position, and unrelated source units remain outside the Change Surface.
 
@@ -1004,7 +1008,7 @@ Do not modify files or run project commands.
 
 ```text
 Apply Review Code to the completed change.
-Remove task-introduced duplication and unnecessary indirection,
+Remove task-introduced duplication, unjustified single-use abstractions, and unnecessary indirection,
 preserve behavior and interfaces, and repeat the relevant tests.
 ```
 

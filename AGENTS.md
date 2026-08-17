@@ -635,22 +635,23 @@ For every plan:
 1. Establish APIs, language features, library functions, command options, and version behavior through code inspection, Authoritative Sources, or Verification.
 2. Verify syntax, semantics, compatibility, and version-specific behavior.
 3. Preserve existing variable names, architecture, and conventions within Requested Scope.
-4. Limit modifications to code required by the Task Specification.
-5. For each Comment-eligible Source File created or materially modified within Requested Scope, add one Orientation Comment at the file opening after every required preamble.
-6. Within those files, add one Orientation Comment before each function, method, language-level procedure, loop, and distinct logical section created or materially modified within Requested Scope. Treat a contiguous code block with a separate processing phase or responsibility as a distinct logical section; reuse an existing nearby Orientation Comment when it already states that role.
-7. Use the simplest language-valid comment form consistent with project formatting. State purpose or responsibility first and include material syntax, format, invariant, Constraint, Side Effect, or rationale information when it contributes to correct understanding or modification.
-8. Identify edge cases capable of changing a Completion Criterion.
-9. Identify repeated and related occurrences affected by a change and update them consistently within Requested Scope.
-10. Run applicable tests and Verification.
-11. Classify unavailable Verification as an unresolved limitation and report it.
-12. Apply `Review Code` after implementation.
+4. Before adding new logic, inspect related code for an existing algorithm, helper, or abstraction that can be reused or extended. Extract shared code only when the same algorithm or responsibility applies to multiple current places, or when extraction materially improves correctness, clarity, or testability. Avoid single-use variables, functions, classes, modules, and wrappers that merely rename obvious code or anticipate speculative reuse. Keep modularity proportional to demonstrated reuse and maintenance value.
+5. Limit modifications to code required by the Task Specification.
+6. For each Comment-eligible Source File created or materially modified within Requested Scope, add one Orientation Comment at the file opening after every required preamble.
+7. Within those files, add one Orientation Comment before each function, method, language-level procedure, loop, and distinct logical section created or materially modified within Requested Scope. Treat a contiguous code block with a separate processing phase or responsibility as a distinct logical section; reuse an existing nearby Orientation Comment when it already states that role.
+8. Use the simplest language-valid comment form consistent with project formatting. State purpose or responsibility first and include material syntax, format, invariant, Constraint, Side Effect, or rationale information when it contributes to correct understanding or modification.
+9. Identify edge cases capable of changing a Completion Criterion.
+10. Identify repeated and related occurrences affected by a change and update them consistently within Requested Scope.
+11. Run applicable tests and Verification.
+12. Classify unavailable Verification as an unresolved limitation and report it.
+13. Apply `Review Code` after implementation.
 
 ### Review Code
 
 1. Review every changed code file against the Task Specification.
 2. Verify that each Comment-eligible Source File opening, function, method, language-level procedure, loop, and distinct logical section created or materially modified within Requested Scope has an Orientation Comment.
 3. Retain an adequate existing comment. Rewrite a required Orientation Comment that merely paraphrases visible syntax so it states purpose or responsibility. Remove every other comment that merely restates code and remove duplicate, obsolete, or misleading comments.
-4. Remove duplicated logic, unnecessary indirection, and unreachable or unused code introduced by the task.
+4. Remove duplicated logic, unnecessary indirection, and unreachable or unused code introduced by the task. Remove task-introduced single-use variables, functions, classes, modules, and wrappers when they merely rename obvious code or anticipate speculative reuse; retain them when they materially improve correctness, clarity, or testability.
 5. Preserve observable behavior, public interfaces, data flow, edge cases, validation, error handling, safety, compatibility, performance requirements, tests, and existing conventions.
 6. Keep unrelated code outside the change surface.
 7. Repeat applicable Verification after compaction.

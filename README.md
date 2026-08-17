@@ -102,6 +102,7 @@ They define the problems that the Procedure model responds to.
 - `Invented_APIs`: May use functions, parameters, or libraries that do not exist.
 - `Ignores_edge_cases`: Happy-path solutions are more common than robust ones.
 - `Partial_refactoring`: May modify only some occurrences, leaving inconsistencies.
+- `Disproportionate_modularity`: May duplicate reusable algorithms or create single-use abstractions whose maintenance cost is unsupported by reuse, correctness, clarity, or testability value.
 - `Version_confusion`: Can mix features from different language or library versions.
 - `Opaque_executable_behavior`: Executable implementation details may be unavailable or impractical to inspect recursively, while configuration, scripts, hooks, and plugins activated by an invocation can materially change behavior.
 - `Opaque_code_intent`: Code can expose its mechanics while leaving file responsibilities and processing phases difficult to identify.
@@ -447,8 +448,8 @@ The table identifies the executive owner and result for each cross-cutting decla
 | `Research Sources` | Gather and compare evidence by Source authority and Evidence Strength. |
 | `Plan Work` | Produce executable steps, Dependencies, Risks, and Completion Criteria. |
 | `Select Tools And Operations` | Validate and invoke the eligible tool or Operation required for correctness. |
-| `Implement Code` | Produce verified software changes with concise structural orientation within Requested Scope. |
-| `Review Code` | Verify required Orientation Comments and compact completed code while maintaining behavior and Verification. |
+| `Implement Code` | Produce verified software changes through reuse-first integration, proportional modularity, and concise structural orientation within Requested Scope. |
+| `Review Code` | Verify required Orientation Comments and compact completed code by removing duplicated logic and unjustified single-use abstractions while maintaining behavior and Verification. |
 | `Edit Content` | Apply requested modifications through a meaning-integrity record. |
 | `Create Documents` | Produce structured documents with consistent terms, references, and Canonical Content. |
 | `Review Documents` | Compact document meaning through authoritative references and semantic-integrity checks. |
@@ -549,6 +550,7 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | Governing Artifacts include prompts, policies, standards, schemas, specifications, routing rules, examples, checklists, and references. | `Terms`, `Author Rules`, `Optimize Rules`, `Review Rules` |
 | Quality criteria and Acceptance Scenarios share pass, failure-with-exact-mismatch, and unverified-with-missing-evidence Check Results before governing-artifact acceptance. | `Evaluate Governing Artifact Quality`, `Review Rules` |
 | Coding and documentation workflows include dedicated post-work semantic-integrity reviews. | `Implement Code`, `Review Code`, `Create Documents`, `Review Documents` |
+| Coding workflows inspect related implementations before adding logic and keep abstractions proportional to demonstrated reuse and maintenance value. | `Implement Code`, `Review Code` |
 | Comment-eligible source created or materially modified within Requested Scope identifies file, function, method, language-level procedure, loop, and distinct logical-section purpose through concise Orientation Comments; review rewrites required mechanical comments and removes other mechanical, duplicate, obsolete, or misleading comments. | `Implement Code`, `Review Code` |
 | Grammatical structure keeps relationships among actions, objects, and qualifiers unambiguous. | `Evaluate Governing Artifact Quality` |
 | The Preferred Workspace Script Language established by Governance Configuration is selected when Workspace conventions and stronger constraints establish no other eligible language. | `Establish Governance Configuration`, `Select Workspace Script Language` |
