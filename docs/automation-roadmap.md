@@ -243,7 +243,7 @@ Recommended initial scenarios:
 - `GC-01`, `GC-06`, and `GC-07` for layered configuration;
 - `IA-07` and `IC-02` for clarification;
 - `IA-15` through `IA-22` for local, web, tool-result, transformed-content, delegated-authority, positive direct-user, governing-policy, and non-operation approval provenance;
-- `EX-02`, `EX-03`, and `EX-04` for unapproved-executor authorization lifecycle, and `EX-10` for configured Git CLI and protected `.git` manager classification;
+- `EX-02`, `EX-03`, and `EX-04` for unapproved-executor authorization lifecycle, `EX-10` for configured Git CLI and protected `.git` manager classification, `EX-11` for configured GitHub CLI with independent Indirect Executor classification, `EX-12` for Windows npm script-shell execution, and `EX-13` for Git SSH transport through OpenSSH;
 - `IA-14`, `OP-04`, `OP-05`, and `OP-08` for confirmation lifecycle;
 - `OP-03` and `OP-10` for protected direct and indirect access;
 - `FL-04`, `FL-06`, `FL-08`, and `FL-14` for link prevention and correction;
