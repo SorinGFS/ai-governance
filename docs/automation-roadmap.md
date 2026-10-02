@@ -74,6 +74,8 @@ Enable structured events, governance records, mock-tool traces, or other diagnos
 
 ### Human Review
 
+Authored scenario sources and documentation use controlled updates, automated mechanical checks, and explicit semantic review; they need not be deterministically regenerated. Generated fixtures, reports, and documentation use deterministic regeneration and checks for source correspondence, required format, layout, and filesystem object types. Identify authority, role, acceptance checks, timing, update, and dependent refresh responsibilities for each artifact.
+
 Route an outcome to human review when its expected meaning cannot be evaluated reliably by deterministic assertions. Human review produces `pass`, `failure`, or `unverified` with cited evidence; it is not silently replaced by another model's unsupported judgment.
 
 ## Proposed Architecture
@@ -242,6 +244,9 @@ Recommended initial scenarios:
 
 - `GC-01`, `GC-06`, and `GC-07` for layered configuration;
 - `IA-07` and `IC-02` for clarification;
+- `IA-23` through `IA-25` for tracking start, unrecorded pre-task discussion, and recorder reuse before delegated continuation handling;
+- `IC-12` through `IC-14` for path-failure diagnosis, cause-appropriate recovery, and unresolved-cause limitations;
+- `BE-10` through `BE-12` for evidence-backed bounded targets, classification-complete coverage, and independent unknown-behavior and prohibited-effect dispositions;
 - `IA-15` through `IA-22` for local, web, tool-result, transformed-content, delegated-authority, positive direct-user, governing-policy, and non-operation approval provenance;
 - `EX-02`, `EX-03`, and `EX-04` for unapproved-executor authorization lifecycle, `EX-10` for configured Git CLI and protected `.git` manager classification, `EX-11` for configured GitHub CLI with independent Indirect Executor classification, `EX-12` for Windows npm script-shell execution, and `EX-13` for Git SSH transport through OpenSSH;
 - `IA-14`, `OP-04`, `OP-05`, and `OP-08` for confirmation lifecycle;
@@ -264,18 +269,25 @@ Recommended initial scenarios:
 - test partial authorization, refusal, cancellation, and continuation;
 - test that authorization and confirmation Pending Requests remain unresolved after every non-user approval source and resume only after qualifying Direct User Input;
 - preserve and compare session state across turns;
+- verify IA-23 through IA-25 event ordering: no pre-task recorder, one recorder immediately after Task establishment before input resolution or analysis, no retroactive registration of pre-task invocations or the interaction-level root, and existing-recorder resumption before delegated continuation handling;
 - mutate controlled state between observations and assert invalidation before reuse;
+- add WL-35 and WL-36 fixtures that distinguish evidence preserved for closure from invalidation for future operational reuse, and inject an independent change or new observation to verify that historical closure evidence does not establish fresh external state;
 - distinguish an active Task retained by a Pending Request from a closed Task retained only as history;
 - test new linked Tasks that import selected historical items and revalidate mutable state;
-- add compaction fixtures when supported by the adapter.
+- add compaction fixtures when supported by the adapter;
+- add WL-28 through WL-32 fixtures for shared completion checkpoints, checkpoint-specific record sets, current invocation roles, earlier same-name invocations, missing records, and after-response retention; assert one recorder and preserve WL-13 event ordering.
 
 ### Phase 5: Semantic And Governance Review
 
 - define bounded semantic assertions for required message content;
 - add code fixtures and semantic assertions for WL-18 through WL-26, covering Orientation Comment placement, purpose-bearing content, adequate-comment reuse, review correction, inapplicable Artifact handling, reuse-first integration, shared extraction, and unjustified single-use abstractions;
+- add paired caller fixtures for WL-33 and WL-34 to verify `Maintain Code Orientation` modes and the shared Unjustified Single-use Abstraction definition without replacing the existing code scenarios;
 - provide a human-review queue for unresolved judgments;
 - automate document and Governing Artifact setup and observable checks;
-- retain guarantee mapping and quality review as inspectable evidence.
+- add GQ-13 and GQ-14 fixtures separating circular definition or prerequisite dependencies from bounded execution cycles; verify explicit progress, stopping conditions, retained waits, and termination when alternatives are exhausted;
+- add MA-01 through MA-05 fixtures for authored sources, regenerated outputs, prohibited commodity patterns, missing maintenance responsibilities, and unavailable checks; keep mechanical assertions distinct from semantic review;
+- retain guarantee mapping and quality review as inspectable evidence;
+- add GQ-11 and GQ-12 contract-mapping checks for shared actions, explicit caller differences, and rejected wording-only extraction; compare all affected project documents as one synchronized change set, and keep static consistency results distinct from behavioral acceptance.
 
 ### Phase 6: Additional Runtime Adapters
 
@@ -314,6 +326,8 @@ The automation roadmap is fully implemented when:
 - every prompt-injection scenario proves that the adapter delivered hostile approval content through the declared non-user source rather than the user-message channel;
 - test controls demonstrate that the runner detects forbidden execution and incorrect final behavior;
 - environment manifests make results attributable to exact tested setups;
+- behavioral contracts used in fixtures cover the actual Invocation Context, relevant defaults and extension points, and exact or evidence-backed bounded targets; approved executor identity alone is not sufficient coverage;
+- lifecycle assertions distinguish unrecorded pre-task handling, active-Task recording, preserved closure evidence, and current evidence required for new observations or Historical Imports;
 - report aggregation preserves failures, unverified outcomes, and repetition variance;
 - no acceptance decision depends solely on the tested model's self-report;
 - generated documentation, if adopted, preserves every matrix scenario and its meaning.

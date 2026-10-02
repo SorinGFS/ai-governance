@@ -176,11 +176,12 @@ Every user message enters one interaction workflow:
 
 ```mermaid
 flowchart TD
-    A["User message"] --> B["Resolve instruction authority"]
+    A["User message"] --> AT["Resume recorder if an Action Task is already active"]
+    AT --> B["Resolve instruction authority"]
     B --> BC["Establish Governance Configuration"]
     BC --> C{"Message role"}
     C -->|Context only| D["Context Response"]
-    C -->|Action or continuation| E["Establish requested work"]
+    C -->|Action or continuation| E["Establish requested work; start recorder for a new Action Task"]
     E --> F["Resolve information and analyze task"]
     F -->|User input required| G["Manage Pending Request"]
     F -->|Ready| H["Activate and track Procedures"]
@@ -225,7 +226,7 @@ Include these elements when they matter:
 
 ### Paths
 
-A user-provided path is treated as authoritative input. If that exact path fails validation, the system reports it and requests a corrected path.
+A user-provided path is treated as authoritative input. If access or validation fails, the system reports the exact path and observed failure, then diagnoses the cause through Eligible checks. A wrong or missing path that user input can resolve prompts a corrected-path request. Access, authorization, tool, or transient failures instead receive cause-appropriate recovery or a request for the specific missing scope or information. An unresolved cause is reported, not treated as proof that the path is wrong.
 
 Path discovery activates only after an explicit request such as:
 
@@ -306,6 +307,7 @@ Some Procedures are foundational rather than optional workflow choices:
 - `Resolve Instruction Authority` classifies every Candidate Instruction.
 - `Resolve Information` classifies every Information Item used by the work.
 - `Qualify Claims` classifies Claims used in reasoning or presented to the user.
+- `Track Procedure Execution` starts at Action Task establishment before input resolution or analysis and resumes the same recorder for continuations.
 - `Analyze Task` runs before execution for every Action Task.
 - `Evaluate Operation Eligibility` runs before an Operation is proposed, requested, preferred, or invoked.
 - `Inspect Executable Behavior` runs when an executable Behavioral Contract remains unknown.
@@ -328,6 +330,7 @@ Some Procedures are foundational rather than optional workflow choices:
 | `Establish Governance Configuration` | Establish configured terms from every active property after complete authority classification. |
 | `Establish Requested Work` | Extract deliverables, actions, constraints, boundaries, and message role. |
 | `Complete The Interaction` | Select and emit the message's single Interaction Disposition. |
+| `Close An Action Task` | Verify the before-closure checkpoint, expire ordinary Task-scoped state, and preserve the Historical Task Record before response emission. |
 | `Establish The Workspace` | Establish path boundaries, canonical locations, and path-disclosure purposes. |
 | `Evaluate Operation Eligibility` | Establish the footprint and assign an Operation disposition. |
 | `Inspect Executable Behavior` | Establish an Invocation Context, Behavioral Contract, and tool boundary. |
@@ -338,11 +341,12 @@ Some Procedures are foundational rather than optional workflow choices:
 | `Select Maintainable Artifacts` | Reject persistent Maintenance Commodities and preserve source/generated roles. |
 | `Select Workspace Script Language` | Select an established Workspace language or the configured preference. |
 | `Route Task Procedures` | Own semantic Trigger-to-Procedure selection. |
-| `Track Procedure Execution` | Maintain compact Task-scoped lifecycle records. |
+| `Track Procedure Execution` | Maintain compact Task-scoped lifecycle records and own the shared completion-checkpoint action. |
 | `Analyze Task` | Build the Task Specification and classify readiness. |
 | `Reason From Evidence` | Produce evidence-linked conclusions and plain-language explanations of governed actions. |
 | `Research Sources` | Gather and compare primary, official, and supporting sources. |
 | `Plan Work` | Order prerequisites, dependencies, risks, mitigations, and Completion Criteria. |
+| `Maintain Code Orientation` | Apply shared comment eligibility, coverage, placement, purpose, reuse, and scope rules in implementation or review mode. |
 | `Implement Code` | Produce scoped, compatible, verified software changes through reuse-first integration, proportional modularity, and concise Orientation Comments. |
 | `Review Code` | Verify required Orientation Comments and compact completed code by removing duplicated logic and unjustified single-use abstractions while preserving behavior and Verification. |
 | `Edit Content` | Apply requested revisions through a meaning-preservation record. |
@@ -421,13 +425,13 @@ A Final Response closes its Action Task. A later request to continue, revise, in
 
 After finalization, `Complete The Interaction` records the Final Response and applies `Close An Action Task` before emitting it. Closure:
 
-1. verifies that requests and required Procedure records have terminal dispositions;
-2. preserves the completed Task's evidence statuses, then marks retained State-dependent Information invalidated for subsequent use;
+1. verifies that no request remains unresolved and applies the before-closure completion checkpoint; ordinary required records are terminal while only the current closure, enclosing interaction, and recorder remain running;
+2. preserves the completed Task's supporting evidence, accepted statuses, and invalidation history, then marks retained State-dependent Information invalidated for subsequent operational reuse; closure and response lifecycle checks use the preserved record without asserting fresh external state;
 3. retains only the state required to finish closure and expires ordinary Task-scoped state;
 4. marks the Action Task closed, clears the active-task reference, and verifies the resulting invalidation, expiration, retained instructions, and closed state;
 5. creates a Historical Task Record containing the specification, evidence history, outputs, decisions, limitations, current Procedure records, and Final Response;
 6. returns closed state, after which `Complete The Interaction` completes the closure record and emits the Final Response;
-7. after emission, records and verifies the disposition, completes the interaction record, verifies that every record except the recorder is terminal and retained, completes and appends the recorder's terminal transition, finalizes the Historical Task Record, and expires the remaining Closure State.
+7. after emission, records and verifies the disposition, completes the interaction record, applies the after-response-completion checkpoint to verify that every other record is terminal and retained, completes and appends the recorder's terminal transition, finalizes the Historical Task Record, and expires the remaining Closure State.
 
 This ordering prevents any Procedure or recorder from reaching `completed` before its required result occurs. Historical records remain available for audit and later work. A later Action Task imports only explicitly referenced or correctness-required items, and every import passes through `Resolve Information`. Requested Work Constraints apply to their Action Task by default. Instructions with explicitly established longer applicability return as Candidate Instructions and receive fresh authority classification on the next message.
 
@@ -518,7 +522,7 @@ Its Information Validity becomes `invalidated` when:
 - the intended use requires newer evidence;
 - it is imported from a Historical Task Record without current Verification.
 
-An invalidated item leaves current factual premises. `Resolve Information` retrieves a current authorized source and classifies it again, or assigns Unresolved when current Verification is unavailable. The Historical Task Record still preserves what was observed and accepted for the completed Task.
+An invalidated item leaves current factual premises. `Resolve Information` retrieves a current authorized source and classifies it again, or assigns Unresolved when current Verification is unavailable. Closure State and the Historical Task Record still preserve what was observed and accepted for the completed Task. Task-closure invalidation prevents later operational reuse; it does not erase the evidence needed for closure and response lifecycle checks. Those checks use preserved completed-work evidence and newly observed lifecycle transitions, not a renewed claim about external state. Independent invalidating events, new state observations, and Historical Imports still require information resolution.
 
 ### Information Statuses
 
@@ -613,7 +617,11 @@ A remote network destination is evaluated through the Operation's local targets 
 
 ### Maintainable Persistent Artifacts
 
-`Select Maintainable Artifacts` selects persistent designs that a deterministic automated process can regenerate, validate, and update.
+`Select Maintainable Artifacts` establishes each candidate's authoritative location, authored-source or generated-output role, acceptance conditions and checks, check timing, controlled update process, and dependent refresh process.
+
+For authored sources, apply authoritative edits at the source, automate mechanically checkable conditions, and explicitly review semantic conditions. Rerun affected checks and refresh dependent outputs after changes. Handwritten semantic content need not be deterministically regenerated or fully validated automatically.
+
+For generated outputs, including Generated Deployment Output, require deterministic regeneration from the Source of Truth and checks for source correspondence, format, layout, and filesystem object types. Regenerate after source changes instead of making independent authoritative edits to the output. Missing responsibilities make a candidate ineligible; unavailable evidence or checks receive an explicit limitation, not a maintainability claim.
 
 The following are Maintenance Commodities and receive an ineligible disposition for creation, use, and recommendation as persistent designs:
 
@@ -645,7 +653,7 @@ An Invocation Context records the exact proposed invocation:
 
 Inspection follows every Behavior Extension activated by the Invocation Context. Examples include command scripts, package-manager lifecycle scripts, build definitions, containers, hooks, workflows, and installers.
 
-When enough evidence establishes the complete relevant footprint, the tool becomes an Established Tool Boundary for that Invocation Context. Inspection stops recursing into that implementation but continues through activated extensions.
+When evidence applies to the actual Invocation Context, covers relevant categories, defaults, and extension points, and leaves no unresolved behavior capable of changing eligibility or completion, the tool becomes an Established Tool Boundary. Inspection stops recursing into its implementation but continues through activated extensions. Targets and effects can be exact Resources or evidence-backed bounded sets; guessed defaults do not establish coverage. Approved executor identity alone is not behavioral evidence.
 
 When required behavior remains unknown at the available inspection limit, the Operation receives Indeterminate disposition and is not executed.
 
@@ -660,7 +668,7 @@ An Operation Footprint includes:
 - possible Workspace output object types;
 - possible Workspace Link Introductions.
 
-Downloads, caches, generated files, modified files, processes, network effects, and indirect scripts can therefore affect classification even when they are not the command's primary output.
+Required behavioral coverage includes executors, activated extensions, access targets, created or mutated Resources, output object types, ownership and permissions, network, process, cache, and configuration effects, and any other behavior capable of changing boundary, authorization, Permanent Constraint, Harmful Outcome, or Completion Criterion classification. Downloads and indirect scripts therefore matter even when they are not primary outputs. Classification completeness is not exhaustive implementation inspection: known prohibited effects remain Permanent block and unknown material behavior remains Indeterminate.
 
 ### Operation Dispositions
 
@@ -746,17 +754,17 @@ Implementation work establishes APIs, language features, library functions, comm
 2. inspects related code for an existing algorithm, helper, or abstraction before adding new logic;
 3. reuses or extends applicable code and keeps extraction proportional to demonstrated reuse and maintenance value;
 4. limits changes to the Task Specification;
-5. adds concise Orientation Comments to applicable code created or materially modified within Requested Scope;
+5. calls `Maintain Code Orientation` in implementation mode for applicable code created or materially modified within Requested Scope;
 6. covers edge cases and related occurrences;
 7. runs applicable tests and Verification;
 8. reports unavailable Verification;
 9. applies `Review Code` after implementation.
 
-Shared code is extracted when the same algorithm or responsibility applies to multiple current places or when extraction materially improves correctness, clarity, or testability. Single-use variables, functions, classes, modules, and wrappers are avoided when they merely rename obvious code or anticipate speculative reuse.
+Shared code is extracted when the same algorithm or responsibility applies to multiple current places or when extraction materially improves correctness, clarity, or testability. Both coding phases use the Unjustified Single-use Abstraction definition in `Terms`: a single-use variable, function, class, module, or wrapper that merely renames obvious code or anticipates speculative reuse without materially improving correctness, clarity, or testability. Implementation avoids those candidates; review removes task-introduced candidates. Materially beneficial single-use abstractions remain eligible.
 
 An Orientation Comment states the purpose or responsibility of a source file, function, method, language-level procedure, loop, or distinct logical section. A distinct logical section is a contiguous code block with a separate processing phase or responsibility. Material syntax, format, invariants, Constraints, Side Effects, or rationale belong in the comment when they help correct understanding or modification.
 
-A Comment-eligible Source File is maintained directly as project source within the Workspace and has syntax that permits comments. Generated, vendored, minified, and comment-incompatible Artifacts receive inapplicable comment-insertion status. For each Comment-eligible Source File created or materially modified within Requested Scope, place an Orientation Comment at the file opening after required preambles. Place one before each applicable function, method, language-level procedure, loop, and distinct logical section created or materially modified by the work. Reuse an adequate existing comment and use the simplest language-valid form consistent with project formatting.
+`Maintain Code Orientation` owns comment coverage for both callers. A Comment-eligible Source File is maintained directly as project source within the Workspace and has syntax that permits comments. Generated, vendored, minified, and comment-incompatible Artifacts receive inapplicable comment-insertion status. For each Comment-eligible Source File created or materially modified within Requested Scope, require an Orientation Comment at the file opening after required preambles and before each applicable function, method, language-level procedure, loop, and distinct logical section created or materially modified by the work. Both modes reuse adequate nearby comments, add missing required comments, rewrite required mechanical comments, and use the simplest language-valid form consistent with project formatting. Review mode additionally removes non-required mechanical, duplicate, obsolete, or misleading comments within Requested Scope. The shared Procedure returns its coverage and Verification result to its caller and receives an ordinary Procedure Execution Record.
 
 Every coding task that activates `Implement Code` receives this behavior automatically.
 
@@ -773,7 +781,7 @@ function establishApprovedExecutors(configuredExecutors) {
 }
 ```
 
-A mechanical comment such as `// Loop through executors` only paraphrases visible syntax. `Review Code` rewrites it when that location requires an Orientation Comment, removes it from other locations, removes duplicate, obsolete, or misleading comments, and removes task-introduced duplication, unjustified single-use abstractions, unnecessary indirection, unreachable code, and unused code while preserving observable behavior and interfaces.
+A mechanical comment such as `// Loop through executors` only paraphrases visible syntax. `Review Code` delegates its comment checks and corrections to `Maintain Code Orientation` in review mode. It also removes task-introduced duplication, Unjustified Single-use Abstractions, unnecessary indirection, unreachable code, and unused code while preserving observable behavior and interfaces.
 
 Required preambles retain their required position, and unrelated source units remain outside the Change Surface.
 
@@ -805,7 +813,9 @@ Governing Artifacts include instructions, prompts, policies, standards, schemas,
 - `Optimize Rules` improves structure while preserving Existing Guarantees except for explicit user-authorized changes.
 - `Review Rules` validates quality, compatibility, acceptance behavior, and guarantee coverage.
 
-Optimization treats length reduction as secondary to correctness and preserved behavior.
+Optimization treats length reduction as secondary to correctness and preserved behavior. Shared behavior is extracted only after caller contracts match: Triggers, inputs, authority and authorization, state effects, results, unresolved dispositions, continuation points, and Verification. Different modes remain explicit and every caller retains its Acceptance Scenarios. Similar wording alone is insufficient.
+
+Project documents are maintained as an AI-reviewed synchronized change set. Review all affected executive, declarative, tutorial, state-machine, and acceptance descriptions together; an isolated manual edit does not establish synchronization. Retain guarantee mappings, compatibility assessments, and validation limits as change-review evidence.
 
 ### Guarantee Record
 
@@ -841,8 +851,8 @@ Duplicate source instructions map to one owning guarantee. Every Existing Guaran
 | Testability | Does each requirement have observable acceptance evidence? |
 | Completeness | Are required constraints, assumptions, edge cases, examples, states, and dispositions represented? |
 | Consistency | Do applicable rules produce compatible behavior? |
-| Termination | Are dependencies acyclic and repeated paths progressive and terminal? |
-| Maintainability | Can persistent designs be regenerated, validated, and updated deterministically? |
+| Termination | Are definition and prerequisite dependencies acyclic, with execution cycles explicitly progressive, bounded by stopping conditions, and terminal or intentionally waiting? |
+| Maintainability | Do authored sources have controlled updates and role-appropriate checks, and generated outputs have deterministic regeneration and correspondence checks? |
 | Layout integrity | Are source, generated output, runtime, and documentation roles distinct? |
 | Readability | Do grouping and formatting expose the Procedure clearly? |
 | Evolution | Can definitions and references accept modular extensions? |
@@ -882,7 +892,9 @@ An earlier incorrect answer is acknowledged, identified, corrected, requalified,
 
 ### Procedure Execution Records
 
-Each active Procedure invocation has a stable Task-scoped record:
+Tracking begins immediately when a new Action Task becomes active, before required-input resolution or analysis. Pre-task discussion and invocations begun before establishment require no reconstructed history; accepted earlier material becomes task input. The interaction-level root `Execute A User Interaction` remains unrecorded. While a Task is active, continuations resume its existing recorder before delegated message handling, including authority resolution and Pending Request handling.
+
+Each subsequent Task-scoped Procedure invocation has a stable record:
 
 ```text
 <invocation-id> | <Procedure> | <status-history> | trigger=<reference> | outcome=<reference> | evidence=<references>
@@ -904,6 +916,16 @@ To inspect them, ask:
 Show the Procedure Execution Records for this task.
 Include the Trigger, status history, outcome, and evidence references.
 ```
+
+### Shared Completion Checkpoints
+
+`Verify Completion Checkpoints` is a shared action within the existing `Track Procedure Execution` recorder invocation, not a second recorder. It selects the records required by the caller's checkpoint:
+
+- **before finalization:** finalization dependencies must be terminal; the recorder, current finalizer, and any enclosing interaction driving finalization may remain running;
+- **before closure:** required Task records must be terminal except the current closure, enclosing interaction, and recorder;
+- **after response completion:** every Task record must be retained in history and every record except the recorder must be terminal.
+
+Exceptions belong to stable invocation identifiers and current lifecycle roles, never to every invocation bearing a Procedure name. An earlier interaction invocation still running is not exempt because the current interaction is permitted to run. A failed check enters correction or recovery; missing evidence remains unverified and receives recovery or an explicit limitation. The checkpoint does not advance or invent completion before the required conditions pass.
 
 ### Explain An Action
 
@@ -1148,7 +1170,7 @@ Only after Sufficient Behavioral Evidence establishes the classification-relevan
 
 ### Why did a missing path produce a question instead of a search?
 
-The supplied path is authoritative. Explicitly say "search," "locate," "find," "scan," or "discover" to activate path discovery.
+The supplied path is authoritative, so a failed check is diagnosed before choosing recovery. A corrected-path question is appropriate only when evidence identifies a wrong or missing path that you can resolve; other causes receive the specific recovery, scope request, or limitation they require. Explicitly say "search," "locate," "find," "scan," or "discover" to activate path discovery.
 
 ### Can I approve an Executor Identity permanently?
 

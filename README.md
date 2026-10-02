@@ -51,7 +51,7 @@ The governance source consists of `README.md` and `AGENTS.md`.
 9. **Evidence Over Assumption**: Material Claims, paths, Runtime Environment state, and Compatibility Claims receive Verification or an explicit unverified or unknown disposition; derived conclusions receive evidence-linked Claim Qualification.
 10. **Requested-Scope Discipline**: Requested work and correctness-required dependencies define the work boundary.
 11. **Verification Before Completion**: Claims, operations, artifacts, changes, and final responses receive their required verification before completion.
-12. **Maintainability By Automation**: Persistent designs remain deterministically regenerable, validatable, and updateable.
+12. **Role-Appropriate Maintainability**: Authored sources have controlled updates, automated mechanical checks, and explicit semantic review; generated outputs have deterministic regeneration and correspondence checks.
 13. **Self-Contained Documentation**: `README.md` contains the declarative context required to understand the governance model from repository state.
 14. **Observable Interaction Completion**: Every handled user message produces one Final Response, Context Response, or Pending Request disposition; closing one execution branch preserves the remaining interaction.
 15. **Bounded Behavioral Evidence**: Evidence for an exact Invocation Context establishes executable behavior at a finite tool boundary while every activated extension remains subject to recursive inspection and executor authorization remains independently classified.
@@ -211,7 +211,7 @@ The executive implementation is the `Direct user input`, `Confirmed harmful outc
 
 ### Definition Topology
 
-Primitive terms precede composite terms. Composite terms precede the Procedures that consume them. Derived states are established by their owning Procedure before later Procedures reference them.
+Primitive terms precede composite terms. Composite terms precede the Procedures that consume them. Derived states are established by their owning Procedure before later Procedures reference them. Definition and prerequisite dependencies remain acyclic; Procedure calls and references may form execution cycles with explicit progress, stopping conditions, and terminal or retained-wait dispositions. Exhausted recovery or correction alternatives stop retries.
 
 The executive implementation begins with `Terms` and is enforced by the dependency-order criterion in `Evaluate Governing Artifact Quality`.
 
@@ -219,7 +219,9 @@ The executive implementation begins with `Terms` and is enforced by the dependen
 
 An Invocation Context identifies the exact proposed invocation, including each executor or tool identity and version, entry command, arguments, working directory, behavior-relevant environment, manifests, configuration, defaults, and discovered project state. Executable inspection is complete when Evidence Items establish a Behavioral Contract for that context and its classification-relevant inputs, outputs, effects, and Behavior Extensions. This creates an Established Tool Boundary at which implementation-recursion ends.
 
-Recursion continues through every Behavior Extension activated by the Invocation Context. Runtime schemas and contracts, authoritative exact-version documentation, runtime command metadata, inspected definitions, and independently Eligible isolated observations can contribute evidence.
+Recursion continues through every Behavior Extension activated by the Invocation Context. Runtime schemas and contracts, authoritative exact-version documentation, runtime command metadata, inspected definitions, and independently Eligible isolated observations can contribute evidence. Evidence must apply to the actual context and cover relevant categories, defaults, and extension points. Targets and effects may be exact Resources or evidence-backed bounded sets, never guessed defaults.
+
+Required coverage includes executors, activated extensions, access targets, Resource mutations, output object types, ownership and permissions, network, process, cache, and configuration effects, and any other behavior capable of changing eligibility or completion. Inspection stops at the established boundary only when no unresolved behavior can change those classifications. Known prohibited effects remain Permanent block; unknown material behavior remains Indeterminate.
 
 Behavioral sufficiency establishes the Operation Footprint. Executor authorization remains a separate eligibility decision for every Direct Executor and Indirect Executor.
 
@@ -233,6 +235,14 @@ Unique, action-oriented section names provide stable and unambiguous reference t
 
 The executive implementation is the ownership and distinctness criteria in `Evaluate Governing Artifact Quality`, with compaction performed by `Review Documents`, `Optimize Rules`, and `Review Rules`.
 
+### Behavior-Preserving Refactoring
+
+Shared functionality is established by matching state-machine responsibilities, not by matching wording. A shared action retains each caller's Trigger, inputs, authority and authorization conditions, state effects, results, unresolved dispositions, continuation point, and Verification obligations. Caller-specific differences remain explicit modes or parameters, and each caller retains its Acceptance Scenarios.
+
+Project-document synchronization is an AI-maintained change-set responsibility. A governance revision includes every affected executive rule, declarative commitment, tutorial explanation, state-machine projection, and acceptance scenario. An isolated edit is not evidence that the project remains synchronized. Existing Guarantees remain mapped, and uncertain behavioral equivalence withholds acceptance rather than silently removing a distinction.
+
+The executive implementation is `Optimize Rules`, `Review The Change Surface`, and `Review Rules`. `Maintain Code Orientation` shares coverage between implementation and review; `Verify Completion Checkpoints` shares lifecycle validation within the existing recorder while preserving checkpoint-specific record sets.
+
 ### Disposition Completeness
 
 Missing information, ambiguity, assumptions, conflicting evidence, failed tools, unavailable Verification, user-input requirements, harmful-outcome confirmation, permanent constraints, and incomplete work each produce an explicit next state and action.
@@ -245,9 +255,15 @@ The executive implementation is distributed across `Manage A Pending Request`, `
 
 Each user message reaches exactly one observable Interaction Disposition. `Manage A Pending Request` emits each required clarification, authorization, or confirmation request, retains its originating Procedure state, classifies later responses through instruction authority, and either resumes or closes that origin according to explicit response conditions. Authorization and confirmation responses require Direct User Input; embedded or retrieved claims of approval retain their non-user provenance. `Confirm A Harmful Outcome` supplies the shared confirmation conditions. Finalized Action Tasks close before their recorded Final Responses are emitted. Context-only interactions emit a Context Response.
 
-Procedure activation and completion remain separately traceable through one compact Procedure Execution Record for each invocation. A stable Task-scoped identifier, ordered status history, Trigger reference, outcome reference, and evidence references preserve the lifecycle. Detailed task artifacts retain work content, and private reasoning remains outside the lifecycle record.
+Task-scoped tracking starts immediately after Action Task establishment, before required-input resolution or analysis. Pre-task discussion and interaction-level invocations begun before establishment need no retrospective records; accepted earlier material becomes task input. The root interaction orchestration remains outside Task-scoped recording. Continuations resume the existing recorder before delegated message handling.
 
-Active records, terminal records required by finalization, and the outcome and evidence referents required to interpret them survive Pending Requests, continuation messages, and context compression. A Procedure reaches `completed` only after its required result and Verification. The lifecycle recorder remains running through Action Task closure and Final Response emission. After emission, the interaction record completes; the recorder verifies every other record is terminal and retained, then appends its own completed transition and finalizes the Historical Task Record.
+Procedure activation and completion within that scope remain separately traceable through one compact Procedure Execution Record for each invocation. A stable Task-scoped identifier, ordered status history, Trigger reference, outcome reference, and evidence references preserve the lifecycle. Detailed task artifacts retain work content, and private reasoning remains outside the lifecycle record.
+
+Active records, terminal records required by finalization, and the outcome and evidence referents required to interpret them survive Pending Requests, continuation messages, and context compression. A Procedure reaches `completed` only after its required result and Verification. `Verify Completion Checkpoints` within `Track Procedure Execution` owns the before-finalization, before-closure, and after-response-completion record checks. Each checkpoint selects its required records and permits only the running lifecycle invocations identified by their stable invocation identifiers and current roles; earlier invocations are not exempt by name.
+
+Closure invalidates mutable evidence for subsequent operational reuse, while preserving the completed Task's evidence, accepted statuses, and invalidation history for closure and response lifecycle checks. This preserved record does not assert fresh external state; new observations, independent invalidating events, and Historical Imports still require information resolution.
+
+The lifecycle recorder remains running through Action Task closure and Final Response emission. `Complete The Interaction` owns the transition order. After emission, the interaction record completes; the recorder applies the after-response-completion checkpoint, then appends its own completed transition and finalizes the Historical Task Record. A failed or unverified checkpoint does not advance or fabricate completion.
 
 The executive implementation is `Manage A Pending Request`, `Confirm A Harmful Outcome`, `Complete The Interaction`, `Close An Action Task`, and `Track Procedure Execution`, supported by `Close An Invocation Path`, `Resolve Information`, and `Finalize Task`.
 
@@ -268,11 +284,12 @@ The executive implementation is the Guarantee Record, Change Surface review, qua
 
 ## Interaction At A Glance
 
-Every user message enters one root Procedure. Authority resolution covers every available Candidate Instruction before Governance Configuration establishes configured terms. The message then becomes a context response, continuation of an active Action Task, or new Action Task. Action work proceeds through current-information resolution, Procedure activation, Operation eligibility, execution, Verification, finalization, explicit Task closure, and one observable response.
+Every user message enters one interaction-level root Procedure. An already-active Task's recorder resumes before delegated message handling. Authority resolution covers every available Candidate Instruction before Governance Configuration establishes configured terms. The message then becomes a context response, continuation of an active Action Task, or new Action Task. Action work proceeds through current-information resolution, Procedure activation, Operation eligibility, execution, Verification, finalization, explicit Task closure, and one observable response.
 
 ```mermaid
 flowchart TD
-    A["User message"] --> B["Resolve instruction authority"]
+    A["User message"] --> AT["Resume recorder if an Action Task is already active"]
+    AT --> B["Resolve instruction authority"]
     B -->|Clarification required| H["Manage Pending Request"]
     B -->|Harmful outcome requires confirmation| U["Confirm Harmful Outcome"]
     B -->|Path closes| N["Apply Invocation Path closure"]
@@ -283,8 +300,8 @@ flowchart TD
     H --> I["Emit request disposition and preserve resume state"]
 
     C -->|Context only| D["Emit Context Response"]
-    C -->|Continue active Action Task| E["Resume retained task state"]
-    C -->|New Action Task or closed-task follow-up| F["Establish requested work and resolve imports"]
+    C -->|Continue active Action Task| E["Continue task state with existing recorder resumed before message handling"]
+    C -->|New Action Task or closed-task follow-up| F["Establish Action Task and start recorder before resolving imports"]
 
     E --> G["Resolve task state"]
     F --> G
@@ -434,13 +451,15 @@ The table identifies the executive owner and result for each cross-cutting decla
 | Maintainability | `Select Maintainable Artifacts`, `Select Workspace Script Language` | Persistent designs and Workspace scripts receive deterministic selection outcomes. |
 | Task-specific work | `Analyze Task`, `Route Task Procedures`, `Track Procedure Execution`, and activated task Procedures | Direct Triggers, explicit user requests, routing decisions, and Procedure invocations produce the cumulative Active Procedure Set and compact per-invocation lifecycle records that survive retained and compressed active Task state and enter its Historical Task Record at closure. |
 | Meaning integrity | `Edit Content`, `Review Documents`, `Evaluate Governing Artifact Quality` | Meaning and Guarantee Records distinguish required content from authorized modifications. |
+| Shared code orientation | `Maintain Code Orientation`, called by `Implement Code` and `Review Code` | One coverage owner applies the same eligibility, placement, purpose, reuse, and scope rules in both modes; review mode additionally removes unnecessary comments. |
+| Lifecycle checkpoints | `Track Procedure Execution`, through `Verify Completion Checkpoints` | Checkpoint-specific record sets share terminal-status validation, invocation-specific running exceptions, recovery, and missing-evidence dispositions without creating a second recorder. |
 | Governance quality | `Evaluate Governing Artifact Quality`, `Author Rules`, `Optimize Rules`, `Review Rules` | Shared Check Results produce correction-required, verification-required, passed, conforming, accepted, or acceptance-withheld outcomes while preserving Guarantee Record coverage. |
 | Compliance review | `Audit Instructions` | Evidence produces confirmed violations, risks, and unverified items, followed by a violations-found, inconclusive, or pass result. |
 | Completion | `Finalize Task`, `Manage A Pending Request`, `Complete The Interaction`, `Close An Action Task` | The Work Product receives a completion disposition; Pending Requests retain active Task state; a recorded Final Response closes its Action Task before emission; and lifecycle completion is recorded only after the required result occurs. |
 
 ### Routed Procedures
 
-`Analyze Task` and `Finalize Task` activate directly for every Action Task. `Route Task Procedures` connects Task Specification characteristics to these additional executive Procedures, and later Trigger changes extend the Active Procedure Set:
+`Track Procedure Execution` starts directly at Action Task establishment; `Analyze Task` and `Finalize Task` activate directly for every Action Task. `Route Task Procedures` connects Task Specification characteristics to these additional executive Procedures, and later Trigger changes extend the Active Procedure Set:
 
 | Executive Procedure | Declarative responsibility |
 | --- | --- |
@@ -519,12 +538,12 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | State-dependent information has a Validity Condition, loses current status after an invalidating event, and receives fresh retrieval or an unresolved disposition before dependent use. | `Resolve Information`, `Evaluate Operation Eligibility`, `Finalize Task` |
 | Facts, Inferences, Assumptions, Opinions, Recommendations, and unverified Claims remain distinguishable. | `Qualify Claims` |
 | Material Claims and factual Claims involving changing information, sources, compatibility, paths, Runtime Environment state, names, identifiers, versions, dates, numbers, units, and references receive authoritative Verification or an explicit unverified disposition. | `Verify Facts`, `Verify Runtime Compatibility` |
-| User-provided paths remain authoritative inputs, and path discovery is an explicit task capability. | `Resolve Information` |
+| User-provided paths remain authoritative inputs; failed access is diagnosed before cause-appropriate recovery or a request for a corrected path, and path discovery requires an explicit request. | `Resolve Information` |
 | Runtime Environment facts originate from runtime tools. | `Select Tools And Operations` |
 | Terms, boundaries, permissions, conditions, and gates precede dependent actions. | `Terms`, `Evaluate Governing Artifact Quality` |
 | Excluded, blocked, indeterminate, and denied paths receive a recorded closure, affected-item allocation, and successor through remaining classification, context response, Task work, or finalization. | `Close An Invocation Path` |
 | Workspace safety applies to the complete Operation Footprint, including indirect execution and Side Effects. | `Evaluate Operation Eligibility`, `Inspect Executable Behavior` |
-| Sufficient Behavioral Evidence establishes a Behavioral Contract for the exact Invocation Context and closes implementation-recursion at an Established Tool Boundary. | `Inspect Executable Behavior` |
+| Sufficient Behavioral Evidence covers classification-relevant behavior for the exact Invocation Context, with exact or evidence-backed bounded targets and no unresolved behavior capable of changing eligibility or completion; it closes implementation-recursion at an Established Tool Boundary. | `Inspect Executable Behavior` |
 | Recursive behavioral inspection follows every Behavior Extension activated by the Invocation Context. | `Inspect Executable Behavior` |
 | Behavioral sufficiency supplies footprint evidence while executor authorization remains independently required for every Direct Executor and Indirect Executor. | `Inspect Executable Behavior`, `Evaluate Operation Eligibility` |
 | Before an Operation introduces filesystem objects inside the Workspace, direct and indirect producers receive output-object-type inspection; a Workspace Link Introduction receives a Permanent block and unresolved output type receives an Indeterminate disposition. | `Evaluate Operation Eligibility`, `Inspect Executable Behavior` |
@@ -542,20 +561,20 @@ The detailed Procedures remain centralized in `AGENTS.md`. The declarative commi
 | A Workspace persists across continuation messages for the same active Action Task and enters a later Task only through explicit continued applicability and current information resolution. | `Establish Requested Work`, `Resolve Information`, `Establish The Workspace` |
 | Requested work and correctness-required information define response content. | `Establish Requested Work`, `Finalize Task` |
 | Procedure descriptions provide deterministic routing and retain decision-critical Trigger scope. | `Route Task Procedures`, `Evaluate Governing Artifact Quality` |
-| Every Procedure activated directly, explicitly requested, selected by routing, or invoked by another active Procedure enters the cumulative Active Procedure Set. | `Terms`, `Route Task Procedures` |
-| Every active Procedure invocation has one compact, stable Task-scoped record containing its ordered active, running, completed, limited, or failed transitions and references to its Trigger, outcome, and supporting evidence. | `Track Procedure Execution` |
+| Every Task-scoped Procedure activated directly, explicitly requested, selected by routing, or invoked by another active Procedure enters the cumulative Active Procedure Set. | `Terms`, `Route Task Procedures` |
+| Tracking starts at Action Task establishment before input resolution or analysis, excludes the interaction-level root and invocations begun before establishment, and resumes the existing recorder for continuations. Each subsequent Task-scoped Procedure invocation has one compact, stable record containing ordered lifecycle transitions and Trigger, outcome, and evidence references. | `Track Procedure Execution` |
 | Active lifecycle records, terminal records required by finalization, and their required outcome and evidence referents persist across Pending Requests, continuation messages, and context compression. | `Track Procedure Execution`, `Finalize Task` |
 | Requested Work Constraints are Task-scoped by default; longer-lived instructions retain only Candidate status after closure and receive fresh authority classification on the next message. | `Establish Requested Work`, `Close An Action Task`, `Resolve Instruction Authority` |
-| A finalized Action Task transitions from active to closed before its recorded Final Response is emitted; ordinary Task-scoped state expires, closure is verified, and terminal interaction records enter the Historical Task Record after emission. | `Complete The Interaction`, `Close An Action Task`, `Track Procedure Execution` |
+| A finalized Action Task transitions from active to closed before its recorded Final Response is emitted; ordinary Task-scoped state expires, preserved completed-Task evidence supports closure checks without becoming current operational state, and terminal interaction records enter the Historical Task Record after emission. | `Complete The Interaction`, `Close An Action Task`, `Track Procedure Execution` |
 | A later request concerning closed work establishes a new linked Action Task and resolves only explicitly referenced or correctness-required Historical Imports. | `Establish Requested Work`, `Resolve Information` |
 | Governing Artifacts include prompts, policies, standards, schemas, specifications, routing rules, examples, checklists, and references. | `Terms`, `Author Rules`, `Optimize Rules`, `Review Rules` |
 | Quality criteria and Acceptance Scenarios share pass, failure-with-exact-mismatch, and unverified-with-missing-evidence Check Results before governing-artifact acceptance. | `Evaluate Governing Artifact Quality`, `Review Rules` |
 | Coding and documentation workflows include dedicated post-work semantic-integrity reviews. | `Implement Code`, `Review Code`, `Create Documents`, `Review Documents` |
-| Coding workflows inspect related implementations before adding logic and keep abstractions proportional to demonstrated reuse and maintenance value. | `Implement Code`, `Review Code` |
-| Comment-eligible source created or materially modified within Requested Scope identifies file, function, method, language-level procedure, loop, and distinct logical-section purpose through concise Orientation Comments; review rewrites required mechanical comments and removes other mechanical, duplicate, obsolete, or misleading comments. | `Implement Code`, `Review Code` |
+| Coding workflows inspect related implementations before adding logic and keep abstractions proportional to demonstrated reuse and maintenance value. Implementation avoids and review removes task-introduced Unjustified Single-use Abstractions using the same term definition. | `Terms`, `Implement Code`, `Review Code` |
+| Comment-eligible source created or materially modified within Requested Scope identifies file, function, method, language-level procedure, loop, and distinct logical-section purpose through concise Orientation Comments; review rewrites required mechanical comments and removes other mechanical, duplicate, obsolete, or misleading comments. | `Maintain Code Orientation`, called by `Implement Code` and `Review Code` |
 | Grammatical structure keeps relationships among actions, objects, and qualifiers unambiguous. | `Evaluate Governing Artifact Quality` |
 | The Preferred Workspace Script Language established by Governance Configuration is selected when Workspace conventions and stronger constraints establish no other eligible language. | `Establish Governance Configuration`, `Select Workspace Script Language` |
-| Persistent designs use deterministic regeneration, validation, and update processes; copied runtime layouts remain Generated Deployment Output. | `Select Maintainable Artifacts` |
+| Authored sources identify their authority, acceptance checks, timing, controlled updates, and dependent refresh process, with automated mechanical checks and explicit semantic review. Generated outputs require deterministic regeneration and correspondence, format, layout, and object-type checks; copied runtime layouts remain Generated Deployment Output. | `Select Maintainable Artifacts` |
 | Compatible extensions maintain instruction authority; an executive Governing Artifact ends its executive content with the task-independent Authority Guard, while a Governance Configuration section, when present, is the final non-executive section. | `Resolve Instruction Authority`, `Evaluate Governing Artifact Quality` |
 | Completed work remains auditable against its Active Instruction Set, Requested Scope, evidence, and required Procedures. | `Audit Instructions`, `Finalize Task` |
 | On request, a governed action or disposition receives a plain-language explanation grounded in applicable instructions, task decisions, Evidence Items, and Procedure Execution Records; historical information is identified as historical and unavailable basis is reported. | `Reason From Evidence` |
